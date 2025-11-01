@@ -47,18 +47,39 @@ export default function ProfileDetailPage() {
 
   // Mock data for additional profile details
   const services = [
-    { label: 'Klasická masáž', url: '/escort?service=klasicke-masaze' },
-    { label: 'Erotická masáž', url: '/escort?service=eroticke-masaze' },
-    { label: 'Tantrická masáž', url: '/escort?service=tantra' },
-    { label: 'Masáž s happy endem', url: '/escort?service=happy-end' },
-    { label: 'Body to body', url: '/escort?service=body-to-body' },
-    { label: 'Nuru masáž', url: '/escort?service=nuru-masaz' },
-    { label: 'Thajská masáž', url: '/escort?service=thajska-masaz' },
-    { label: 'Párovka', url: '/escort?service=parovka' },
-    { label: 'Striptýz', url: '/escort?service=striptyz' },
-    { label: 'Společná sprcha', url: '/escort?service=sprcha' },
-    { label: 'Escort', url: '/escort?service=escort' },
-    { label: 'Girlfriend experience', url: '/escort?service=girlfriend-experience' },
+    // Masáže
+    { label: 'Klasická masáž', url: '/eroticke-masaze?service=klasicke-masaze' },
+    { label: 'Erotická masáž', url: '/eroticke-masaze?service=eroticke-masaze' },
+    { label: 'Tantrická masáž', url: '/eroticke-masaze?service=tantra' },
+    { label: 'Masáž s happy endem', url: '/eroticke-masaze?service=happy-end' },
+    { label: 'Body to body', url: '/eroticke-masaze?service=body-to-body' },
+    { label: 'Nuru masáž', url: '/eroticke-masaze?service=nuru-masaz' },
+    { label: 'Thajská masáž', url: '/eroticke-masaze?service=thajska-masaz' },
+    { label: 'Prostatická masáž', url: '/eroticke-masaze?service=prostaticka-masaz' },
+    { label: 'Masáž pro páry', url: '/eroticke-masaze?service=parovka' },
+    { label: 'Relaxační masáž', url: '/eroticke-masaze?service=relaxacni-masaz' },
+
+    // Escort služby
+    { label: 'Escort', url: '/holky-na-sex?service=escort' },
+    { label: 'Girlfriend experience (GFE)', url: '/holky-na-sex?service=girlfriend-experience' },
+    { label: 'Dinner date', url: '/holky-na-sex?service=dinner-date' },
+    { label: 'Travel companion', url: '/holky-na-sex?service=travel-companion' },
+    { label: 'Overnight escort', url: '/holky-na-sex?service=overnight' },
+
+    // Speciální služby
+    { label: 'Striptýz', url: '/holky-na-sex?service=striptyz' },
+    { label: 'Erotický tanec', url: '/holky-na-sex?service=eroticky-tanec' },
+    { label: 'Společná sprcha', url: '/holky-na-sex?service=sprcha' },
+    { label: 'Foot fetish', url: '/holky-na-sex?service=foot-fetish' },
+    { label: 'Roleplay', url: '/holky-na-sex?service=roleplay' },
+    { label: 'Bondage', url: '/bdsm?service=bondage' },
+    { label: 'Domina služby', url: '/bdsm?service=domina' },
+    { label: 'Submisivní služby', url: '/bdsm?service=submisivni' },
+
+    // Online služby
+    { label: 'Videochat', url: '/online-sex?service=videochat' },
+    { label: 'Sexting', url: '/online-sex?service=sexting' },
+    { label: 'Custom foto/video', url: '/online-sex?service=custom-content' },
   ];
 
   const pricing = [
