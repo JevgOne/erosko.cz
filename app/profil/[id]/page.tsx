@@ -159,7 +159,12 @@ export default function ProfileDetailPage() {
                     <CheckCircle className="w-8 h-8 text-green-500" />
                   )}
                 </h1>
-                <p className="text-xl text-gray-400">{profile.category}</p>
+                <Link
+                  href={`/${profile.category === 'Holky na sex' ? 'holky-na-sex' : profile.category === 'Erotické masérky' ? 'eroticke-masaze' : profile.category === 'Online modelka' ? 'online-sex' : profile.category === 'Domina' ? 'bdsm' : 'escort'}`}
+                  className="text-xl text-primary-400 hover:text-primary-300 transition-colors inline-block"
+                >
+                  {profile.category}
+                </Link>
               </div>
 
               {/* Rating */}
