@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
-    if (!session || !session.user?.email) {
+    if (!session || !session.user) {
       return NextResponse.json(
         { error: 'Nepřihlášen' },
         { status: 401 }
@@ -16,7 +15,7 @@ export async function GET(request: Request) {
 
     // Najdi uživatele podle emailu
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { email: session.user.email! },
       include: {
         profiles: {
           orderBy: { createdAt: 'desc' },
