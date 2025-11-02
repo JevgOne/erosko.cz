@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import Header from '@/components/Header';
-import { Building2, User, Settings, LogOut, Plus, Eye, Edit, Trash2, LayoutDashboard, CreditCard, Users, CheckCircle, Clock, Star } from 'lucide-react';
+import { Building2, User, Settings, LogOut, Plus, Eye, Edit, Trash2, LayoutDashboard, CreditCard, Users, CheckCircle, Clock, Star, TrendingUp, AlertCircle, Image as ImageIcon, Phone, Heart } from 'lucide-react';
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-type MenuItem = 'dashboard' | 'business' | 'profiles';
+type MenuItem = 'dashboard' | 'business' | 'profiles' | 'statistics';
 
 export default function InzerentDashboard() {
   const router = useRouter();
@@ -82,6 +83,7 @@ export default function InzerentDashboard() {
     { id: 'dashboard' as MenuItem, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'business' as MenuItem, label: 'Informace o podniku', icon: Building2 },
     { id: 'profiles' as MenuItem, label: 'Profily', icon: Users },
+    { id: 'statistics' as MenuItem, label: 'Statistiky', icon: TrendingUp },
   ];
 
   return (
@@ -358,6 +360,221 @@ export default function InzerentDashboard() {
                 </div>
               )}
 
+              {/* Statistics */}
+              {activeSection === 'statistics' && (
+                <div className="space-y-6">
+                  <div>
+                    <h1 className="text-3xl font-bold mb-2">Statistiky</h1>
+                    <p className="text-gray-400">Detailní přehled návštěvnosti a výkonu vašich profilů</p>
+                  </div>
+
+                  {/* Overview Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="glass rounded-xl p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Eye className="w-5 h-5 text-primary-400" />
+                        <h3 className="font-semibold text-sm">Zobrazení profilu</h3>
+                      </div>
+                      <p className="text-2xl font-bold">{totalViews.toLocaleString('cs-CZ')}</p>
+                      <p className="text-xs text-green-400 mt-1">+12% tento týden</p>
+                    </div>
+
+                    <div className="glass rounded-xl p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Phone className="w-5 h-5 text-primary-400" />
+                        <h3 className="font-semibold text-sm">Kliknutí na telefon</h3>
+                      </div>
+                      <p className="text-2xl font-bold">0</p>
+                      <p className="text-xs text-gray-400 mt-1">Za posledních 7 dní</p>
+                    </div>
+
+                    <div className="glass rounded-xl p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Heart className="w-5 h-5 text-primary-400" />
+                        <h3 className="font-semibold text-sm">Oblíbené</h3>
+                      </div>
+                      <p className="text-2xl font-bold">0</p>
+                      <p className="text-xs text-gray-400 mt-1">Přidání do oblíbených</p>
+                    </div>
+
+                    <div className="glass rounded-xl p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Star className="w-5 h-5 text-yellow-400" />
+                        <h3 className="font-semibold text-sm">Průměrné hodnocení</h3>
+                      </div>
+                      <p className="text-2xl font-bold">{avgRating > 0 ? avgRating.toFixed(1) : '—'}</p>
+                      <p className="text-xs text-gray-400 mt-1">Z {totalReviews} hodnocení</p>
+                    </div>
+                  </div>
+
+                  {/* Visitor Chart */}
+                  <div className="glass rounded-xl p-6">
+                    <h2 className="text-xl font-bold mb-6">Návštěvnost (posledních 30 dní)</h2>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart
+                        data={[
+                          { date: '1.1', views: 0 },
+                          { date: '2.1', views: 0 },
+                          { date: '3.1', views: 0 },
+                          { date: '4.1', views: 0 },
+                          { date: '5.1', views: 0 },
+                          { date: '6.1', views: 0 },
+                          { date: '7.1', views: 0 },
+                          { date: '8.1', views: 0 },
+                          { date: '9.1', views: 0 },
+                          { date: '10.1', views: 0 },
+                          { date: '11.1', views: 0 },
+                          { date: '12.1', views: 0 },
+                          { date: '13.1', views: 0 },
+                          { date: '14.1', views: 0 },
+                        ]}
+                        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                      >
+                        <defs>
+                          <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#ec4899" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#ec4899" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                        <XAxis dataKey="date" stroke="#9ca3af" />
+                        <YAxis stroke="#9ca3af" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#1f2937',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '8px',
+                            color: '#fff'
+                          }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="views"
+                          stroke="#ec4899"
+                          strokeWidth={2}
+                          fillOpacity={1}
+                          fill="url(#colorViews)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Profile Performance */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Individual Profile Stats */}
+                    <div className="glass rounded-xl p-6">
+                      <h2 className="text-xl font-bold mb-4">Výkon jednotlivých profilů</h2>
+                      {profiles.length > 0 || businesses.length > 0 ? (
+                        <div className="space-y-4">
+                          {profiles.map((profile) => (
+                            <div key={profile.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                              <div>
+                                <h3 className="font-semibold">{profile.name}</h3>
+                                <p className="text-sm text-gray-400">{profile.city}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-lg font-bold">{profile.viewCount || 0}</p>
+                                <p className="text-xs text-gray-400">zobrazení</p>
+                              </div>
+                            </div>
+                          ))}
+                          {businesses.map((business) => (
+                            <div key={business.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                              <div>
+                                <h3 className="font-semibold">{business.name}</h3>
+                                <p className="text-sm text-gray-400">{business.city}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-lg font-bold">{business.viewCount || 0}</p>
+                                <p className="text-xs text-gray-400">zobrazení</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-400 text-center py-8">Zatím nemáte žádné profily</p>
+                      )}
+                    </div>
+
+                    {/* Improvement Tips */}
+                    <div className="glass rounded-xl p-6">
+                      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                        <AlertCircle className="w-6 h-6 text-yellow-400" />
+                        Tipy na zlepšení
+                      </h2>
+                      <div className="space-y-4">
+                        <div className="flex items-start gap-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                          <ImageIcon className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <h3 className="font-semibold text-yellow-400 mb-1">Přidejte více fotek</h3>
+                            <p className="text-sm text-gray-300">Profily s 5+ fotkami mají až 3x více zobrazení</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                          <Edit className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <h3 className="font-semibold text-blue-400 mb-1">Vyplňte popis</h3>
+                            <p className="text-sm text-gray-300">Podrobný popis zvyšuje důvěryhodnost a zájem</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                          <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <h3 className="font-semibold text-green-400 mb-1">Získejte ověření</h3>
+                            <p className="text-sm text-gray-300">Ověřené profily získávají 2x více kontaktů</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                          <Clock className="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <h3 className="font-semibold text-purple-400 mb-1">Aktualizujte pravidelně</h3>
+                            <p className="text-sm text-gray-300">Pravidelné aktualizace drží profil v popředí</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Profile Completeness */}
+                  <div className="glass rounded-xl p-6">
+                    <h2 className="text-xl font-bold mb-4">Úplnost profilu</h2>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">Celková úplnost</span>
+                          <span className="text-sm font-bold text-primary-400">45%</span>
+                        </div>
+                        <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-primary-500 to-pink-500" style={{ width: '45%' }}></div>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-2">Kompletní profily získají až 5x více zobrazení</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6">
+                        <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+                          <CheckCircle className="w-5 h-5 text-green-400" />
+                          <span className="text-sm">Základní informace</span>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg opacity-50">
+                          <Clock className="w-5 h-5 text-gray-400" />
+                          <span className="text-sm">Fotografie (0/5)</span>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg opacity-50">
+                          <Clock className="w-5 h-5 text-gray-400" />
+                          <span className="text-sm">Detailní popis</span>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg opacity-50">
+                          <Clock className="w-5 h-5 text-gray-400" />
+                          <span className="text-sm">Ověření profilu</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
             </div>
           </div>
