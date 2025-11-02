@@ -16,6 +16,14 @@ export default function InzerentDashboard() {
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<MenuItem>('dashboard');
+  const [showAddProfileModal, setShowAddProfileModal] = useState(false);
+  const [addProfileLoading, setAddProfileLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    age: '',
+    description: '',
+    services: [] as string[],
+  });
 
   // Profile limits
   const PROFILE_LIMIT = 10; // Free tier limit
@@ -65,6 +73,62 @@ export default function InzerentDashboard() {
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: '/' });
+  };
+
+  const handleAddProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.name || !formData.age) {
+      alert('Vyplňte jméno a věk');
+      return;
+    }
+
+    if (businesses.length === 0) {
+      alert('Nemáte žádný podnik. Nejdřív vytvořte podnik.');
+      return;
+    }
+
+    setAddProfileLoading(true);
+
+    try {
+      const response = await fetch('/api/profiles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          age: parseInt(formData.age),
+          businessId: businesses[0].id, // První podnik
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Profil úspěšně přidán!');
+        setShowAddProfileModal(false);
+        setFormData({ name: '', age: '', description: '', services: [] });
+        // Reload data
+        fetchUserData();
+      } else {
+        alert(data.error || 'Chyba při přidávání profilu');
+      }
+    } catch (error) {
+      console.error('Error adding profile:', error);
+      alert('Chyba při přidávání profilu');
+    } finally {
+      setAddProfileLoading(false);
+    }
+  };
+
+  const handleServiceToggle = (service: string) => {
+    setFormData(prev => ({
+      ...prev,
+      services: prev.services.includes(service)
+        ? prev.services.filter(s => s !== service)
+        : [...prev.services, service]
+    }));
   };
 
   if (loading || status === 'loading') {
@@ -293,6 +357,7 @@ export default function InzerentDashboard() {
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <button
+                        onClick={() => setShowAddProfileModal(true)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
                           canAddMore
                             ? 'gradient-primary hover:opacity-90'
@@ -580,6 +645,129 @@ export default function InzerentDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Add Profile Modal */}
+      {showAddProfileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="glass rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-white/10">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold">Přidat nový profil</h2>
+                <button
+                  onClick={() => setShowAddProfileModal(false)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {businesses.length > 0 && (
+                <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <p className="text-sm text-blue-300">
+                    <strong>Podnik:</strong> {businesses[0].name}
+                  </p>
+                  <p className="text-sm text-blue-300">
+                    <strong>Telefon:</strong> {businesses[0].phone} (bude použit pro všechny profily)
+                  </p>
+                  <p className="text-sm text-blue-300">
+                    <strong>Město:</strong> {businesses[0].city}
+                  </p>
+                </div>
+              )}
+
+              <form onSubmit={handleAddProfile} className="space-y-6">
+                {/* Jméno */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Jméno <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-primary-400 transition-colors"
+                    placeholder="Např. Adéla"
+                    required
+                  />
+                </div>
+
+                {/* Věk */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Věk <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="18"
+                    max="99"
+                    value={formData.age}
+                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-primary-400 transition-colors"
+                    placeholder="18"
+                    required
+                  />
+                </div>
+
+                {/* Popis */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Popis
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={4}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-primary-400 transition-colors resize-none"
+                    placeholder="Napište něco o sobě..."
+                  />
+                </div>
+
+                {/* Služby */}
+                <div>
+                  <label className="block text-sm font-medium mb-3">
+                    Služby (volitelné)
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {['Klasik', 'Orál', 'Anál', 'Masáž', 'BDSM', 'Escort'].map((service) => (
+                      <button
+                        key={service}
+                        type="button"
+                        onClick={() => handleServiceToggle(service)}
+                        className={`px-4 py-2 rounded-lg border transition-all ${
+                          formData.services.includes(service)
+                            ? 'bg-primary-500/20 border-primary-500 text-primary-400'
+                            : 'border-white/10 hover:bg-white/5'
+                        }`}
+                      >
+                        {service}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddProfileModal(false)}
+                    className="flex-1 px-6 py-3 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+                    disabled={addProfileLoading}
+                  >
+                    Zrušit
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-6 py-3 gradient-primary rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                    disabled={addProfileLoading}
+                  >
+                    {addProfileLoading ? 'Přidávám...' : 'Přidat profil'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

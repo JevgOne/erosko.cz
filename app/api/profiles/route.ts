@@ -16,37 +16,67 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, age, phone, city, profileType, category, businessName, services } = body;
+    const { name, age, description, services, businessId } = body;
 
-    if (!name || !age || !city || !phone) {
+    if (!name || !age) {
       return NextResponse.json(
         { error: 'Vyplňte všechny povinné údaje' },
         { status: 400 }
       );
     }
 
-    if (!services || services.length === 0) {
+    if (!businessId) {
       return NextResponse.json(
-        { error: 'Vyberte alespoň jednu službu' },
+        { error: 'Chybí ID podniku' },
         { status: 400 }
       );
     }
 
-    // Generate slug
-    const slug = `${name.toLowerCase().replace(/\s+/g, '-')}-${city.toLowerCase()}-${Date.now()}`;
+    // Najdi podnik a ověř, že patří uživateli
+    const business = await prisma.business.findFirst({
+      where: {
+        id: businessId,
+        ownerId: session.user.id,
+      },
+    });
 
-    // Create profile
+    if (!business) {
+      return NextResponse.json(
+        { error: 'Podnik nenalezen nebo nemáte oprávnění' },
+        { status: 403 }
+      );
+    }
+
+    // Automaticky namapuj kategorii podle typu podniku
+    let category: Category;
+    if (business.profileType === ProfileType.MASSAGE_SALON) {
+      category = Category.EROTICKE_MASERKY;
+    } else if (business.profileType === ProfileType.PRIVAT) {
+      category = Category.HOLKY_NA_SEX;
+    } else if (business.profileType === ProfileType.DIGITAL_AGENCY) {
+      category = Category.DIGITALNI_SLUZBY;
+    } else {
+      category = Category.HOLKY_NA_SEX; // Default
+    }
+
+    // Generate slug
+    const slug = `${name.toLowerCase().replace(/\s+/g, '-')}-${business.city.toLowerCase()}-${Date.now()}`;
+
+    // Create profile - použij telefon a město z podniku
     const profile = await prisma.profile.create({
       data: {
         name,
         slug,
         age: parseInt(age),
-        phone,
-        city,
-        location: `${city}, centrum`,
-        profileType: profileType as ProfileType,
-        category: category as Category,
+        phone: business.phone, // Telefonní číslo z podniku (stejné pro všechny profily)
+        city: business.city, // Město z podniku
+        address: business.address, // Adresa z podniku
+        description: description || null,
+        location: `${business.city}, centrum`,
+        profileType: business.profileType, // Typ z podniku
+        category, // Automaticky namapovaná kategorie
         ownerId: session.user.id,
+        businessId: business.id,
         verified: false,
         isNew: true,
       },
