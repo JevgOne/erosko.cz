@@ -33,6 +33,12 @@ export const profiles = [
     phone: '+420 777 123 456',
     isOnline: true,
     image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400&h=500&fit=crop',
+    // Extended attributes
+    hairColor: 'blonde',
+    bodyType: 'athletic',
+    nationality: 'czech',
+    breastSize: 'medium',
+    breastType: 'natural',
   },
   {
     id: 2,
@@ -50,6 +56,12 @@ export const profiles = [
     phone: '+420 606 234 567',
     isOnline: true,
     image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400&h=500&fit=crop',
+    // Extended attributes
+    hairColor: 'brunette',
+    bodyType: 'slim',
+    nationality: 'russian',
+    breastSize: 'large',
+    breastType: 'natural',
   },
   {
     id: 3,
@@ -67,6 +79,12 @@ export const profiles = [
     phone: '+420 723 345 678',
     isOnline: false,
     image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400&h=500&fit=crop',
+    // Extended attributes
+    hairColor: 'black',
+    bodyType: 'athletic',
+    nationality: 'czech',
+    breastSize: 'medium',
+    breastType: 'natural',
   },
   {
     id: 4,
@@ -84,6 +102,12 @@ export const profiles = [
     phone: '+420 608 456 789',
     isOnline: true,
     image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400&h=500&fit=crop',
+    // Extended attributes
+    hairColor: 'redhead',
+    bodyType: 'curvy',
+    nationality: 'slovak',
+    breastSize: 'xlarge',
+    breastType: 'silicone',
   },
   {
     id: 5,
