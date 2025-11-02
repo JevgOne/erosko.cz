@@ -5,7 +5,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -55,7 +55,7 @@ model Business {
   id          String      @id @default(cuid())
   name        String
   slug        String      @unique
-  description String?     @db.Text
+  description String?
   phone       String
   email       String?
   website     String?
@@ -64,7 +64,7 @@ model Business {
   profileType ProfileType
 
   // Business-specific fields
-  equipment   String[]    // Array of equipment/amenities
+  equipment   Json?       // Array of equipment/amenities
   openingHours Json?      // Opening hours by day: { monday: "9:00-22:00", ... }
 
   // Metadata
@@ -98,7 +98,7 @@ model Profile {
   name        String
   slug        String      @unique
   age         Int
-  description String?     @db.Text
+  description String?
   phone       String
   email       String?
 
@@ -174,7 +174,7 @@ model Photo {
 model Service {
   id          String   @id @default(cuid())
   name        String   @unique
-  description String?     @db.Text
+  description String?
   icon        String?  // Icon name from lucide-react
 
   // Relations

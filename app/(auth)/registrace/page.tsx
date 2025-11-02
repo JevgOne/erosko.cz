@@ -372,29 +372,8 @@ export default function RegistracePage() {
         throw new Error(data.error || 'Chyba při registraci');
       }
 
-      // Automatické přihlášení po úspěšné registraci
-      const loginResponse = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const loginData = await loginResponse.json();
-
-      if (!loginResponse.ok) {
-        // Pokud automatické přihlášení selže, přesměruj na přihlášení
-        router.push('/prihlaseni?registered=true');
-        return;
-      }
-
-      // Ulož token do localStorage
-      if (loginData.token) {
-        localStorage.setItem('token', loginData.token);
-        localStorage.setItem('user', JSON.stringify(loginData.user));
-      }
-
-      // Přesměruj do inzerent dashboardu
-      router.push('/inzerent_dashboard');
+      // Úspěšná registrace - přesměruj na přihlášení
+      router.push('/prihlaseni?registered=true');
     } catch (err: any) {
       setError(err.message);
     } finally {

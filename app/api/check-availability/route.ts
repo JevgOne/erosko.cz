@@ -19,10 +19,7 @@ export async function POST(request: Request) {
       // Kontrola jména v Business tabulce
       const existingBusiness = await prisma.business.findFirst({
         where: {
-          name: {
-            equals: value,
-            mode: 'insensitive' // case-insensitive
-          }
+          name: value
         },
       });
       isAvailable = !existingBusiness;

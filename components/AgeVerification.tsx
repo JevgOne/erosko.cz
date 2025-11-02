@@ -67,27 +67,27 @@ export default function AgeVerification() {
             <div className="bg-dark-800/50 border border-white/10 rounded-xl p-4 space-y-2.5 text-sm text-gray-400 max-h-64 overflow-y-auto">
               <p className="flex items-start gap-2">
                 <span className="text-primary-400 mt-0.5 flex-shrink-0">•</span>
-                <span>Vstupem na tyto stránky potvrzujete, že je vám 18 let nebo více (nebo 21 let, pokud se nacházíte ve státě, kde je tento věk požadován zákonem)</span>
+                <span>Vstupem na tyto stránky potvrzujete, že je vám 18 let nebo více</span>
               </p>
               <p className="flex items-start gap-2">
                 <span className="text-primary-400 mt-0.5 flex-shrink-0">•</span>
-                <span>Všechny údaje uvedené na webu (včetně fotek, popisů a kontaktních informací) jsou údaje inzerentů. Provozovatel webu neručí za správnost těchto údajů</span>
+                <span><strong>EROSKO.CZ slouží pouze jako online platforma pro publikaci profilů</strong> a nenese žádnou odpovědnost za pravdivost, aktuálnost ani správnost zveřejněných údajů, fotografií a informací poskytnutých inzerenty</span>
               </p>
               <p className="flex items-start gap-2">
                 <span className="text-primary-400 mt-0.5 flex-shrink-0">•</span>
-                <span>Web používám pouze pro soukromé účely a nebudu obsah zpřístupňovat osobám mladším 18/21 let</span>
+                <span>Veškeré informace, fotografie a obsah na těchto stránkách <strong>jsou určeny výhradně k osobnímu použití</strong>. Jakékoliv kopírování, sdílení nebo distribuce obsahu bez souhlasu je přísně zakázána</span>
               </p>
               <p className="flex items-start gap-2">
                 <span className="text-primary-400 mt-0.5 flex-shrink-0">•</span>
-                <span>Na veškeré informace, fotografie a obsah zveřejněný na těchto stránkách se vztahují autorská práva. Jakékoliv kopírování nebo šíření obsahu bez souhlasu je zakázáno</span>
+                <span>Za veškerý zveřejněný obsah (texty, fotografie, kontaktní údaje) odpovídají výhradně autoři inzerátů, nikoliv provozovatel platformy</span>
               </p>
               <p className="flex items-start gap-2">
                 <span className="text-primary-400 mt-0.5 flex-shrink-0">•</span>
-                <span>Obsah těchto stránek může být pro některé osoby nevhodný</span>
+                <span>Web používám pouze pro soukromé účely a nebudu obsah zpřístupňovat osobám mladším 18 let</span>
               </p>
               <p className="flex items-start gap-2">
                 <span className="text-primary-400 mt-0.5 flex-shrink-0">•</span>
-                <span>Souhlasíte s našimi podmínkami použití a zásadami ochrany osobních údajů</span>
+                <span>Souhlasím s podmínkami použití a zásadami ochrany osobních údajů</span>
               </p>
             </div>
           </div>
