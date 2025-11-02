@@ -393,8 +393,8 @@ export default function RegistracePage() {
         localStorage.setItem('user', JSON.stringify(loginData.user));
       }
 
-      // Přesměruj do admin panelu
-      router.push('/admin');
+      // Přesměruj do inzerent dashboardu
+      router.push('/inzerent_dashboard');
     } catch (err: any) {
       setError(err.message);
     } finally {
