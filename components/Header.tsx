@@ -51,10 +51,10 @@ export default function Header() {
             {status === 'authenticated' && session?.user ? (
               <>
                 <Link
-                  href="/pridat-inzerat"
+                  href="/inzerent_dashboard"
                   className="px-6 py-2.5 gradient-primary rounded-lg font-medium hover:shadow-lg hover:shadow-primary-500/50 transition-all"
                 >
-                  Přidat inzerát
+                  Dashboard
                 </Link>
                 <div className="relative">
                   <button
@@ -65,10 +65,19 @@ export default function Header() {
                     <span>{session.user.email}</span>
                   </button>
                   {userMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 glass border border-white/10 rounded-lg shadow-xl z-50">
+                    <div className="absolute right-0 mt-2 w-56 glass border border-white/10 rounded-lg shadow-xl z-50">
+                      <Link
+                        href="/inzerent_dashboard"
+                        className="w-full flex items-center space-x-2 px-4 py-3 hover:bg-white/5 transition-colors"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <User className="w-4 h-4" />
+                        <span>Můj dashboard</span>
+                      </Link>
+                      <div className="border-t border-white/5"></div>
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center space-x-2 px-4 py-3 hover:bg-white/5 transition-colors text-left"
+                        className="w-full flex items-center space-x-2 px-4 py-3 hover:bg-white/5 transition-colors text-left text-red-400"
                       >
                         <LogOut className="w-4 h-4" />
                         <span>Odhlásit se</span>
@@ -133,12 +142,16 @@ export default function Header() {
                   <div className="px-4 py-2 text-sm text-gray-400">
                     {session.user.email}
                   </div>
-                  <Link href="/pridat-inzerat" className="block px-4 py-2 gradient-primary rounded-lg font-medium text-center">
-                    Přidat inzerát
+                  <Link
+                    href="/inzerent_dashboard"
+                    className="block px-4 py-2 gradient-primary rounded-lg font-medium text-center"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Dashboard
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center space-x-2 px-4 py-2 hover:bg-white/5 rounded-lg transition-colors"
+                    className="w-full flex items-center space-x-2 px-4 py-2 hover:bg-white/5 rounded-lg transition-colors text-red-400"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Odhlásit se</span>
