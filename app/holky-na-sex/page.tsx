@@ -3,6 +3,7 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SearchWithMap from '@/components/SearchWithMap';
+import ServiceFilters from '@/components/ServiceFilters';
 import ProfileGrid from '@/components/ProfileGrid';
 import { profiles } from '@/components/TopProfiles';
 import { Heart } from 'lucide-react';
@@ -59,6 +60,9 @@ export default function HolkyNaSexPage() {
 
           {/* Search With Map */}
           <SearchWithMap cityPrefix="SEX" pageType="holky-na-sex" />
+
+          {/* Service Filters */}
+          <ServiceFilters pageType="holky-na-sex" />
         </div>
       </section>
 
