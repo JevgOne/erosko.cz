@@ -5,7 +5,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -55,7 +55,7 @@ model Business {
   id          String      @id @default(cuid())
   name        String
   slug        String      @unique
-  description String?     @db.Text
+  description String?
   phone       String
   email       String?
   website     String?
@@ -64,7 +64,7 @@ model Business {
   profileType ProfileType
 
   // Business-specific fields
-  equipment   String[]    // Array of equipment/amenities
+  equipment   Json?       // Array of equipment/amenities (stored as JSON)
   openingHours Json?      // Opening hours by day: { monday: "9:00-22:00", ... }
 
   // Metadata
@@ -98,7 +98,7 @@ model Profile {
   name        String
   slug        String      @unique
   age         Int
-  description String?     @db.Text
+  description String?
   phone       String
   email       String?
 
@@ -198,8 +198,7 @@ model ProfileService {
 model Review {
   id          String   @id @default(cuid())
   rating      Int      // 1-5
-  comment     String?  @db.Text
-
+  comment     String?
   // Relations
   authorId    String
   author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
