@@ -23,6 +23,9 @@ export async function GET(request: Request) {
     const businesses = await prisma.business.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
+        photos: {
+          orderBy: { order: 'asc' },
+        },
         owner: {
           select: {
             email: true,

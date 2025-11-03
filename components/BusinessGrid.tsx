@@ -60,6 +60,7 @@ export default function BusinessGrid({ profiles, title, description }: BusinessG
         isPopular: profile.isPopular,
         profileType: profile.profileType,
         category: profile.category,
+        photos: (profile as any).photos || [], // Add photos from profile
         profiles: []
       };
     }
@@ -137,8 +138,17 @@ export default function BusinessGrid({ profiles, title, description }: BusinessG
               >
                 {/* Image Container - vyšší než u běžných profilů */}
                 <div className="relative h-80 overflow-hidden bg-dark-800">
-                  {/* Placeholder with gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20"></div>
+                  {/* Business Photo */}
+                  {(business as any).photos && (business as any).photos.length > 0 ? (
+                    <img
+                      src={(business as any).photos[0].url}
+                      alt={business.name}
+                      className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    /* Placeholder with gradient */
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20"></div>
+                  )}
 
                   {/* Business Type Badge */}
                   <div className="absolute top-4 left-4 z-10">

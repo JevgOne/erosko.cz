@@ -7,7 +7,7 @@ import Header from '@/components/Header';
 import {
   LayoutDashboard, Users, Building2, UserCircle, MessageSquare,
   CreditCard, Image as ImageIcon, CheckCircle, XCircle, Eye,
-  TrendingUp, AlertCircle, Shield, Search
+  TrendingUp, AlertCircle, Shield, Search, Plus
 } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -25,10 +25,77 @@ export default function AdminPanel() {
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [pendingChanges, setPendingChanges] = useState<any[]>([]);
+  const [businessFilter, setBusinessFilter] = useState<'all' | 'pending_approval' | 'pending_verification'>('all');
 
   // Search and expand states for users
   const [userSearchQuery, setUserSearchQuery] = useState<string>('');
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+
+  // Business edit modal states
+  const [showEditBusinessModal, setShowEditBusinessModal] = useState(false);
+  const [editingBusiness, setEditingBusiness] = useState<any>(null);
+  const [businessFormData, setBusinessFormData] = useState({
+    name: '',
+    description: '',
+    phone: '',
+    email: '',
+    website: '',
+    address: '',
+    city: '',
+    openingHours: {
+      monday: '',
+      tuesday: '',
+      wednesday: '',
+      thursday: '',
+      friday: '',
+      saturday: '',
+      sunday: '',
+    },
+  });
+  const [businessPhotos, setBusinessPhotos] = useState<File[]>([]);
+  const [businessPhotosPreviews, setBusinessPhotosPreviews] = useState<string[]>([]);
+  const [photosToDelete, setPhotosToDelete] = useState<string[]>([]);
+
+  // Add new business modal states
+  const [showAddBusinessModal, setShowAddBusinessModal] = useState(false);
+  const [newBusinessFormData, setNewBusinessFormData] = useState({
+    name: '',
+    description: '',
+    phone: '',
+    email: '',
+    website: '',
+    address: '',
+    city: '',
+    profileType: 'PRIVAT',
+    equipment: [] as string[],
+    openingHours: {
+      monday: '',
+      tuesday: '',
+      wednesday: '',
+      thursday: '',
+      friday: '',
+      saturday: '',
+      sunday: '',
+    },
+  });
+  const [newBusinessPhotos, setNewBusinessPhotos] = useState<File[]>([]);
+  const [newBusinessPhotosPreviews, setNewBusinessPhotosPreviews] = useState<string[]>([]);
+
+  // Add new profile modal states
+  const [showAddProfileModal, setShowAddProfileModal] = useState(false);
+  const [newProfileFormData, setNewProfileFormData] = useState({
+    name: '',
+    age: '',
+    phone: '',
+    email: '',
+    city: '',
+    address: '',
+    category: 'HOLKY_NA_SEX',
+    description: '',
+    businessId: '',
+  });
+  const [newProfilePhotos, setNewProfilePhotos] = useState<File[]>([]);
+  const [newProfilePhotosPreviews, setNewProfilePhotosPreviews] = useState<string[]>([]);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -195,6 +262,200 @@ export default function AdminPanel() {
     } catch (error) {
       console.error('Error deleting profile:', error);
       alert('Chyba při mazání profilu');
+    }
+  };
+
+  const handleEditBusinessOpen = (business: any) => {
+    setEditingBusiness(business);
+    setBusinessFormData({
+      name: business.name || '',
+      description: business.description || '',
+      phone: business.phone || '',
+      email: business.email || '',
+      website: business.website || '',
+      address: business.address || '',
+      city: business.city || '',
+      openingHours: business.openingHours || {
+        monday: '',
+        tuesday: '',
+        wednesday: '',
+        thursday: '',
+        friday: '',
+        saturday: '',
+        sunday: '',
+      },
+    });
+    setBusinessPhotos([]);
+    setBusinessPhotosPreviews([]);
+    setPhotosToDelete([]);
+    setShowEditBusinessModal(true);
+  };
+
+  const handleEditBusinessSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBusiness) return;
+
+    try {
+      // Convert photos to base64
+      const photoPromises = businessPhotos.map((file) => {
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      });
+      const base64Photos = await Promise.all(photoPromises);
+
+      // Prepare data
+      const data: any = { ...businessFormData };
+
+      if (photosToDelete.length > 0 || base64Photos.length > 0) {
+        data.photoChanges = {
+          photosToDelete: photosToDelete.length > 0 ? photosToDelete : undefined,
+          newPhotos: base64Photos.length > 0 ? base64Photos : undefined,
+        };
+      }
+
+      // Send to API
+      const response = await fetch('/api/admin/businesses/edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId: editingBusiness.id, data }),
+      });
+
+      if (response.ok) {
+        alert('Podnik úspěšně upraven!');
+        setShowEditBusinessModal(false);
+        setEditingBusiness(null);
+        fetchAdminData(); // Reload
+      } else {
+        const result = await response.json();
+        alert(result.error || 'Chyba při úpravě podniku');
+      }
+    } catch (error) {
+      console.error('Error editing business:', error);
+      alert('Chyba při úpravě podniku');
+    }
+  };
+
+  // Add new business handlers
+  const handleAddBusinessOpen = () => {
+    setNewBusinessFormData({
+      name: '',
+      description: '',
+      phone: '',
+      email: '',
+      website: '',
+      address: '',
+      city: '',
+      profileType: 'PRIVAT',
+      equipment: [],
+      openingHours: {
+        monday: '',
+        tuesday: '',
+        wednesday: '',
+        thursday: '',
+        friday: '',
+        saturday: '',
+        sunday: '',
+      },
+    });
+    setNewBusinessPhotos([]);
+    setNewBusinessPhotosPreviews([]);
+    setShowAddBusinessModal(true);
+  };
+
+  const handleAddBusinessSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      // Validate required fields
+      if (!newBusinessFormData.name || !newBusinessFormData.phone || !newBusinessFormData.city) {
+        alert('Vyplňte prosím povinná pole: Název, Telefon, Město');
+        return;
+      }
+
+      // Convert photos to base64
+      const photoPromises = newBusinessPhotos.map((file) => {
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      });
+      const base64Photos = await Promise.all(photoPromises);
+
+      // Prepare data
+      const data = {
+        ...newBusinessFormData,
+        photos: base64Photos.length > 0 ? base64Photos : [],
+      };
+
+      // Send to API
+      const response = await fetch('/api/admin/businesses/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data }),
+      });
+
+      if (response.ok) {
+        alert('Podnik úspěšně vytvořen!');
+        setShowAddBusinessModal(false);
+        fetchAdminData(); // Reload
+      } else {
+        const result = await response.json();
+        alert(result.error || 'Chyba při vytváření podniku');
+      }
+    } catch (error) {
+      console.error('Error creating business:', error);
+      alert('Chyba při vytváření podniku');
+    }
+  };
+
+  // Add new profile handlers
+  const handleAddProfileSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      if (!newProfileFormData.name || !newProfileFormData.age || !newProfileFormData.phone || !newProfileFormData.city) {
+        alert('Vyplňte prosím povinná pole');
+        return;
+      }
+
+      const photoPromises = newProfilePhotos.map((file) => {
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      });
+      const base64Photos = await Promise.all(photoPromises);
+
+      const data = {
+        ...newProfileFormData,
+        photos: base64Photos,
+      };
+
+      const response = await fetch('/api/admin/profiles/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data }),
+      });
+
+      if (response.ok) {
+        alert('Profil úspěšně vytvořen!');
+        setShowAddProfileModal(false);
+        fetchAdminData();
+      } else {
+        const result = await response.json();
+        alert(result.error || 'Chyba při vytváření profilu');
+      }
+    } catch (error) {
+      console.error('Error creating profile:', error);
+      alert('Chyba při vytváření profilu');
     }
   };
 
@@ -813,13 +1074,62 @@ export default function AdminPanel() {
             {/* Businesses Section */}
             {activeSection === 'businesses' && (
               <div className="space-y-6">
-                <div>
-                  <h1 className="text-3xl font-bold mb-2">Podniky</h1>
-                  <p className="text-gray-400">Správa a schvalování podniků</p>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold mb-2">Podniky</h1>
+                    <p className="text-gray-400">Správa a schvalování podniků</p>
+                  </div>
+                  <button
+                    onClick={handleAddBusinessOpen}
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-500 to-pink-500 rounded-lg font-semibold hover:shadow-lg hover:shadow-primary-500/50 transition-all"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Přidat nový podnik
+                  </button>
+                </div>
+
+                {/* Filter buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setBusinessFilter('all')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      businessFilter === 'all'
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                    }`}
+                  >
+                    Všechny ({businesses.length})
+                  </button>
+                  <button
+                    onClick={() => setBusinessFilter('pending_approval')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      businessFilter === 'pending_approval'
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                    }`}
+                  >
+                    Čeká na schválení ({businesses.filter(b => !b.approved).length})
+                  </button>
+                  <button
+                    onClick={() => setBusinessFilter('pending_verification')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      businessFilter === 'pending_verification'
+                        ? 'bg-yellow-500 text-white'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                    }`}
+                  >
+                    Čeká na ověření ({businesses.filter(b => !b.verified).length})
+                  </button>
                 </div>
 
                 <div className="space-y-4">
-                  {businesses.map((business) => (
+                  {businesses
+                    .filter(business => {
+                      if (businessFilter === 'pending_approval') return !business.approved;
+                      if (businessFilter === 'pending_verification') return !business.verified;
+                      return true;
+                    })
+                    .map((business) => (
                     <div key={business.id} className="glass rounded-xl p-6">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -871,7 +1181,7 @@ export default function AdminPanel() {
                         <div className="flex flex-col gap-2">
                           {/* Edit Button */}
                           <button
-                            onClick={() => {/* TODO: handleEditBusiness(business) */}}
+                            onClick={() => handleEditBusinessOpen(business)}
                             className="flex items-center gap-2 px-4 py-2 bg-primary-500/20 text-primary-400 rounded-lg hover:bg-primary-500/30 transition-colors"
                           >
                             <Eye className="w-4 h-4" />
@@ -935,9 +1245,18 @@ export default function AdminPanel() {
             {/* Profiles Section */}
             {activeSection === 'profiles' && (
               <div className="space-y-6">
-                <div>
-                  <h1 className="text-3xl font-bold mb-2">Profily</h1>
-                  <p className="text-gray-400">Správa a schvalování profilů</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold mb-2">Profily</h1>
+                    <p className="text-gray-400">Správa a schvalování profilů</p>
+                  </div>
+                  <button
+                    onClick={() => setShowAddProfileModal(true)}
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-500 to-pink-500 rounded-lg font-semibold hover:shadow-lg hover:shadow-primary-500/50 transition-all"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Přidat nový profil
+                  </button>
                 </div>
 
                 {profiles.length > 0 ? (
@@ -1267,6 +1586,692 @@ export default function AdminPanel() {
           </div>
         </div>
       </div>
+
+      {/* Edit Business Modal */}
+      {showEditBusinessModal && editingBusiness && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">Upravit podnik</h2>
+              <button
+                onClick={() => setShowEditBusinessModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditBusinessSave} className="space-y-6">
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Název podniku *
+                  </label>
+                  <input
+                    type="text"
+                    value={businessFormData.name}
+                    onChange={(e) => setBusinessFormData({ ...businessFormData, name: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-primary-500 transition-colors"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Telefon *
+                  </label>
+                  <input
+                    type="tel"
+                    value={businessFormData.phone}
+                    onChange={(e) => setBusinessFormData({ ...businessFormData, phone: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-primary-500 transition-colors"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={businessFormData.email}
+                    onChange={(e) => setBusinessFormData({ ...businessFormData, email: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-primary-500 transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Web
+                  </label>
+                  <input
+                    type="url"
+                    value={businessFormData.website}
+                    onChange={(e) => setBusinessFormData({ ...businessFormData, website: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-primary-500 transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Adresa
+                  </label>
+                  <input
+                    type="text"
+                    value={businessFormData.address}
+                    onChange={(e) => setBusinessFormData({ ...businessFormData, address: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-primary-500 transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Město *
+                  </label>
+                  <input
+                    type="text"
+                    value={businessFormData.city}
+                    onChange={(e) => setBusinessFormData({ ...businessFormData, city: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-primary-500 transition-colors"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Popis
+                </label>
+                <textarea
+                  value={businessFormData.description}
+                  onChange={(e) => setBusinessFormData({ ...businessFormData, description: e.target.value })}
+                  rows={4}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-primary-500 transition-colors resize-none"
+                />
+              </div>
+
+              {/* Photos Management */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white border-b border-white/10 pb-2">
+                  Fotky podniku
+                </h3>
+
+                {/* Existing Photos */}
+                {editingBusiness.photos && editingBusiness.photos.length > 0 && (
+                  <div>
+                    <p className="text-sm text-gray-400 mb-3">Současné fotky (klikněte na fotku pro smazání)</p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                      {editingBusiness.photos.map((photo: any) => (
+                        <div
+                          key={photo.id}
+                          className={`relative group aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${
+                            photosToDelete.includes(photo.id)
+                              ? 'border-red-500 opacity-50'
+                              : 'border-transparent hover:border-primary-400'
+                          }`}
+                          onClick={() => {
+                            if (photosToDelete.includes(photo.id)) {
+                              setPhotosToDelete(photosToDelete.filter(id => id !== photo.id));
+                            } else {
+                              setPhotosToDelete([...photosToDelete, photo.id]);
+                            }
+                          }}
+                        >
+                          <img src={photo.url} alt={`Fotka ${photo.order + 1}`} className="w-full h-full object-cover" />
+                          {photosToDelete.includes(photo.id) && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-red-500/20">
+                              <XCircle className="w-8 h-8 text-red-400" />
+                            </div>
+                          )}
+                          {photo.isMain && (
+                            <div className="absolute top-1 left-1 px-2 py-0.5 bg-primary-500 rounded text-[10px] font-bold">
+                              HLAVNÍ
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add New Photos */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Přidat nové fotky
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+
+                      // HEIC validation
+                      const invalidFiles = files.filter(file => {
+                        const extension = file.name.split('.').pop()?.toLowerCase();
+                        return extension === 'heic' || extension === 'heif';
+                      });
+
+                      if (invalidFiles.length > 0) {
+                        alert('HEIC formát není podporován. Použijte prosím JPG, PNG nebo WebP.');
+                        return;
+                      }
+
+                      setBusinessPhotos(files);
+
+                      // Generate previews
+                      const previews: string[] = [];
+                      files.forEach(file => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          previews.push(reader.result as string);
+                          if (previews.length === files.length) {
+                            setBusinessPhotosPreviews(previews);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      });
+                    }}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-primary-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary-500 file:text-white file:cursor-pointer hover:file:bg-primary-600"
+                  />
+                </div>
+
+                {/* New Photos Preview */}
+                {businessPhotosPreviews.length > 0 && (
+                  <div>
+                    <p className="text-sm text-gray-400 mb-3">Náhled nových fotek ({businessPhotosPreviews.length})</p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                      {businessPhotosPreviews.map((preview, index) => (
+                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border-2 border-green-500">
+                          <img src={preview} alt={`Nová fotka ${index + 1}`} className="w-full h-full object-cover" />
+                          <div className="absolute top-1 left-1 px-2 py-0.5 bg-green-500 rounded text-[10px] font-bold">
+                            NOVÁ
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-4 pt-6 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setShowEditBusinessModal(false)}
+                  className="flex-1 px-6 py-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                >
+                  Zrušit
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-primary-500 to-pink-500 rounded-lg hover:shadow-lg hover:shadow-primary-500/50 transition-all font-semibold"
+                >
+                  Uložit změny
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Business Modal */}
+      {showAddBusinessModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">Přidat nový podnik</h2>
+              <button
+                onClick={() => setShowAddBusinessModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddBusinessSave} className="space-y-6">
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Název podniku <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newBusinessFormData.name}
+                    onChange={(e) => setNewBusinessFormData({...newBusinessFormData, name: e.target.value})}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Telefon <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={newBusinessFormData.phone}
+                    onChange={(e) => setNewBusinessFormData({...newBusinessFormData, phone: e.target.value})}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={newBusinessFormData.email}
+                    onChange={(e) => setNewBusinessFormData({...newBusinessFormData, email: e.target.value})}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Website
+                  </label>
+                  <input
+                    type="url"
+                    value={newBusinessFormData.website}
+                    onChange={(e) => setNewBusinessFormData({...newBusinessFormData, website: e.target.value})}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Město <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newBusinessFormData.city}
+                    onChange={(e) => setNewBusinessFormData({...newBusinessFormData, city: e.target.value})}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Typ podniku <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={newBusinessFormData.profileType}
+                    onChange={(e) => setNewBusinessFormData({...newBusinessFormData, profileType: e.target.value})}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                    required
+                  >
+                    <option value="PRIVAT">Privát</option>
+                    <option value="MASSAGE_SALON">Masážní salon</option>
+                    <option value="ESCORT_AGENCY">Escort Agentura</option>
+                    <option value="SWINGERS_CLUB">Swingers klub</option>
+                    <option value="NIGHT_CLUB">Night Club</option>
+                    <option value="STRIP_CLUB">Strip Club</option>
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium mb-2">
+                    Adresa
+                  </label>
+                  <input
+                    type="text"
+                    value={newBusinessFormData.address}
+                    onChange={(e) => setNewBusinessFormData({...newBusinessFormData, address: e.target.value})}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Popis
+                </label>
+                <textarea
+                  value={newBusinessFormData.description}
+                  onChange={(e) => setNewBusinessFormData({...newBusinessFormData, description: e.target.value})}
+                  rows={4}
+                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none resize-none"
+                />
+              </div>
+
+              {/* Equipment */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Vybavení
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {['Sprcha', 'Parkování', 'Klimatizace', 'Wi-Fi', 'Platba kartou', 'Diskrétní vchod', 'Sauna', 'Whirlpool', 'Masážní stůl', 'Bazén', 'Bar', 'VIP pokoje'].map((item) => (
+                    <label key={item} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newBusinessFormData.equipment.includes(item)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewBusinessFormData({
+                              ...newBusinessFormData,
+                              equipment: [...newBusinessFormData.equipment, item]
+                            });
+                          } else {
+                            setNewBusinessFormData({
+                              ...newBusinessFormData,
+                              equipment: newBusinessFormData.equipment.filter(eq => eq !== item)
+                            });
+                          }
+                        }}
+                        className="w-4 h-4 rounded border-white/10 bg-white/5 checked:bg-primary-500"
+                      />
+                      <span className="text-sm">{item}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Photos */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white border-b border-white/10 pb-2">
+                  Fotky podniku
+                </h3>
+
+                {/* Add Photos */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-3">Přidat fotky</label>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+
+                      // Check for HEIC files
+                      const hasHEIC = files.some(f => f.name.toLowerCase().endsWith('.heic'));
+                      if (hasHEIC) {
+                        alert('HEIC formát není podporován. Použijte prosím JPG, PNG nebo WEBP.');
+                        e.target.value = '';
+                        return;
+                      }
+
+                      setNewBusinessPhotos(prev => [...prev, ...files]);
+
+                      // Create previews
+                      files.forEach(file => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setNewBusinessPhotosPreviews(prev => [...prev, reader.result as string]);
+                        };
+                        reader.readAsDataURL(file);
+                      });
+                    }}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Podporované formáty: JPG, PNG, WEBP (HEIC není podporován)
+                  </p>
+                </div>
+
+                {/* New Photos Preview */}
+                {newBusinessPhotosPreviews.length > 0 && (
+                  <div>
+                    <p className="text-sm text-gray-400 mb-3">Náhled nových fotek (klikněte pro odstranění)</p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                      {newBusinessPhotosPreviews.map((preview, index) => (
+                        <div
+                          key={index}
+                          className="relative group aspect-square rounded-lg overflow-hidden cursor-pointer border-2 border-green-500/50"
+                          onClick={() => {
+                            setNewBusinessPhotos(prev => prev.filter((_, i) => i !== index));
+                            setNewBusinessPhotosPreviews(prev => prev.filter((_, i) => i !== index));
+                          }}
+                        >
+                          <img src={preview} alt={`Nová fotka ${index + 1}`} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 flex items-center justify-center bg-red-500/0 group-hover:bg-red-500/20 transition-colors">
+                            <XCircle className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-4 pt-6 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setShowAddBusinessModal(false)}
+                  className="flex-1 px-6 py-3 bg-white/5 rounded-lg font-semibold hover:bg-white/10 transition-colors"
+                >
+                  Zrušit
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-primary-500 to-pink-500 rounded-lg font-semibold hover:shadow-lg hover:shadow-primary-500/50 transition-all"
+                >
+                  Vytvořit podnik
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Profile Modal */}
+      {showAddProfileModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="glass rounded-3xl p-8 max-w-3xl w-full my-8 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-6">Přidat nový profil</h2>
+            <form onSubmit={handleAddProfileSave} className="space-y-6">
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Jméno *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newProfileFormData.name}
+                    onChange={(e) => setNewProfileFormData({...newProfileFormData, name: e.target.value})}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Věk *</label>
+                  <input
+                    type="number"
+                    required
+                    min="18"
+                    max="99"
+                    value={newProfileFormData.age}
+                    onChange={(e) => setNewProfileFormData({...newProfileFormData, age: e.target.value})}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Telefon *</label>
+                  <input
+                    type="tel"
+                    required
+                    value={newProfileFormData.phone}
+                    onChange={(e) => setNewProfileFormData({...newProfileFormData, phone: e.target.value})}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={newProfileFormData.email}
+                    onChange={(e) => setNewProfileFormData({...newProfileFormData, email: e.target.value})}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Město *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newProfileFormData.city}
+                    onChange={(e) => setNewProfileFormData({...newProfileFormData, city: e.target.value})}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Adresa</label>
+                  <input
+                    type="text"
+                    value={newProfileFormData.address}
+                    onChange={(e) => setNewProfileFormData({...newProfileFormData, address: e.target.value})}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Kategorie *</label>
+                <select
+                  value={newProfileFormData.category}
+                  onChange={(e) => setNewProfileFormData({...newProfileFormData, category: e.target.value})}
+                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                >
+                  <option value="HOLKY_NA_SEX">Holky na sex</option>
+                  <option value="EROTICKE_MASERKY">Erotické maserky</option>
+                  <option value="DOMINA">Domina</option>
+                  <option value="DIGITALNI_SLUZBY">Digitální služby</option>
+                </select>
+              </div>
+
+              {/* Business Assignment (Optional) */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Přiřadit k podniku (volitelné)</label>
+                <select
+                  value={newProfileFormData.businessId}
+                  onChange={(e) => setNewProfileFormData({...newProfileFormData, businessId: e.target.value})}
+                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                >
+                  <option value="">-- SOLO profil (bez podniku) --</option>
+                  {businesses.map((business: any) => (
+                    <option key={business.id} value={business.id}>
+                      {business.name} ({business.city})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Necháte-li prázdné, vytvoří se samostatný SOLO profil
+                </p>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Popis</label>
+                <textarea
+                  value={newProfileFormData.description}
+                  onChange={(e) => setNewProfileFormData({...newProfileFormData, description: e.target.value})}
+                  rows={4}
+                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none resize-none"
+                  placeholder="Detailní popis profilu..."
+                />
+              </div>
+
+              {/* Photos */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Fotky</label>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+
+                    // Check for HEIC files
+                    const heicFiles = files.filter(file =>
+                      file.name.toLowerCase().endsWith('.heic') ||
+                      file.type === 'image/heic'
+                    );
+
+                    if (heicFiles.length > 0) {
+                      alert('HEIC formát není podporován. Prosím, použijte JPG, PNG nebo WEBP.');
+                      e.target.value = '';
+                      return;
+                    }
+
+                    setNewProfilePhotos(files);
+
+                    // Create previews
+                    files.forEach(file => {
+                      const reader = new FileReader();
+                      reader.onload = (e) => {
+                        setNewProfilePhotosPreviews(prev => [...prev, e.target?.result as string]);
+                      };
+                      reader.readAsDataURL(file);
+                    });
+                  }}
+                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-primary-400 focus:outline-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Podporované formáty: JPG, PNG, WEBP (HEIC není podporován)
+                </p>
+              </div>
+
+              {/* New Photos Preview */}
+              {newProfilePhotosPreviews.length > 0 && (
+                <div>
+                  <p className="text-sm text-gray-400 mb-3">Náhled fotek (klikněte pro odstranění)</p>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                    {newProfilePhotosPreviews.map((preview, index) => (
+                      <div
+                        key={index}
+                        className="relative group aspect-square rounded-lg overflow-hidden cursor-pointer border-2 border-green-500/50"
+                        onClick={() => {
+                          setNewProfilePhotos(prev => prev.filter((_, i) => i !== index));
+                          setNewProfilePhotosPreviews(prev => prev.filter((_, i) => i !== index));
+                        }}
+                      >
+                        <img src={preview} alt={`Fotka ${index + 1}`} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-red-500/0 group-hover:bg-red-500/20 transition-colors">
+                          <XCircle className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-4 pt-6 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddProfileModal(false);
+                    setNewProfileFormData({
+                      name: '', age: '', phone: '', email: '', city: '', address: '',
+                      category: 'HOLKY_NA_SEX', description: '', businessId: '',
+                    });
+                    setNewProfilePhotos([]);
+                    setNewProfilePhotosPreviews([]);
+                  }}
+                  className="flex-1 px-6 py-3 bg-white/5 rounded-lg font-semibold hover:bg-white/10 transition-colors"
+                >
+                  Zrušit
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-primary-500 to-pink-500 rounded-lg font-semibold hover:shadow-lg hover:shadow-primary-500/50 transition-all"
+                >
+                  Vytvořit profil
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
