@@ -11,7 +11,7 @@ import BusinessLocationMap from '@/components/BusinessLocationMap';
 const profileTypes = {
   SOLO: { color: 'bg-purple-500', label: 'SOLO' },
   PRIVAT: { color: 'bg-indigo-500', label: 'Privát' },
-  SALON: { color: 'bg-teal-500', label: 'Masážní salon' },
+  MASSAGE_SALON: { color: 'bg-teal-500', label: 'Masážní salon' },
   ESCORT_AGENCY: { color: 'bg-pink-500', label: 'Escort Agentura' },
   DIGITAL_AGENCY: { color: 'bg-blue-500', label: 'Digitální Agentura' },
   SWINGERS_CLUB: { color: 'bg-red-500', label: 'Swingers klub' },
@@ -96,7 +96,7 @@ export default function BusinessDetailPage() {
 
   function getCategoryInfo(profileType: string) {
     switch (profileType) {
-      case 'SALON':
+      case 'MASSAGE_SALON':
         return {
           category: 'Erotické masáže',
           categoryUrl: '/eroticke-masaze',
@@ -104,20 +104,20 @@ export default function BusinessDetailPage() {
         };
       case 'PRIVAT':
         return {
-          category: 'Privát',
-          categoryUrl: '/eroticke-podniky',
+          category: 'Holky na sex',
+          categoryUrl: '/holky-na-sex',
           description: 'Privátní prostředí s profesionálními slečnami pro nezapomenutelné chvíle.',
         };
       case 'ESCORT_AGENCY':
         return {
-          category: 'Escort agentura',
+          category: 'Holky na escort',
           categoryUrl: '/escort',
           description: 'Prémiová escort agentura s ověřenými a diskrétními slečnami.',
         };
       case 'DIGITAL_AGENCY':
         return {
           category: 'Digitální služby',
-          categoryUrl: '/eroticke-podniky',
+          categoryUrl: '/online-sex',
           description: 'Online erotické služby - video hovory, cam shows a premium obsah.',
         };
       default:
@@ -287,24 +287,30 @@ export default function BusinessDetailPage() {
                 </div>
 
                 {/* Opening Hours */}
-                {business.openingHours && (
-                  <div className="bg-dark-800/50 rounded-xl p-4 border border-white/5">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Clock className="w-5 h-5 text-primary-400" />
-                      <h4 className="font-semibold">Otevírací doba</h4>
-                    </div>
-                    <div className="space-y-1.5 text-sm">
-                      {Object.entries(business.openingHours).map(([day, hours]: [string, any]) => (
-                        <div key={day} className="flex justify-between items-center">
-                          <span className="text-gray-400">{czechDays[day as keyof typeof czechDays]}</span>
-                          <span className="text-green-400 font-medium">
-                            {hours || 'Zavřeno'}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                <div className="bg-dark-800/50 rounded-xl p-4 border border-white/5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Clock className="w-5 h-5 text-primary-400" />
+                    <h4 className="font-semibold">Otevírací doba</h4>
                   </div>
-                )}
+                  <div className="space-y-1.5 text-sm">
+                    {[
+                      { day: 'Pondělí', hours: '9:00 - 22:00', open: true },
+                      { day: 'Úterý', hours: '9:00 - 22:00', open: true },
+                      { day: 'Středa', hours: '9:00 - 22:00', open: true },
+                      { day: 'Čtvrtek', hours: '9:00 - 22:00', open: true },
+                      { day: 'Pátek', hours: '9:00 - 23:00', open: true },
+                      { day: 'Sobota', hours: '10:00 - 23:00', open: true },
+                      { day: 'Neděle', hours: '10:00 - 22:00', open: true },
+                    ].map((schedule, index) => (
+                      <div key={index} className="flex justify-between items-center">
+                        <span className="text-gray-400">{schedule.day}</span>
+                        <span className={schedule.open ? 'text-green-400 font-medium' : 'text-red-400'}>
+                          {schedule.hours}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {/* Action Buttons */}
@@ -384,27 +390,39 @@ export default function BusinessDetailPage() {
           {/* Equipment & Location */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             {/* Equipment */}
-            {business.equipment && business.equipment.length > 0 && (
-              <div className="lg:col-span-2 glass rounded-2xl p-6">
-                <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                  <Award className="w-6 h-6 text-primary-400" />
-                  Vybavení
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {business.equipment.map((item: string, index: number) => (
-                    <div
-                      key={index}
-                      className="bg-dark-800/50 rounded-xl p-3 border border-white/5 text-center"
-                    >
-                      <p className="text-sm text-gray-300">{item}</p>
-                    </div>
-                  ))}
-                </div>
+            <div className="lg:col-span-2 glass rounded-2xl p-6">
+              <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                <Award className="w-6 h-6 text-primary-400" />
+                Vybavení
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {[
+                  { icon: '❄️', label: 'Klimatizace' },
+                  { icon: '🚿', label: 'Sprcha' },
+                  { icon: '✅', label: 'Hygiena' },
+                  { icon: '🅿️', label: 'Parkování' },
+                  { icon: '💳', label: 'Platba kartou' },
+                  { icon: '🚪', label: 'Diskrétní vchod' },
+                  { icon: '🌐', label: 'Wi-Fi' },
+                  { icon: '🛋️', label: 'Odpočívárna' },
+                  { icon: '🔒', label: 'Bezpečné prostředí' },
+                  { icon: '🧖', label: 'Sauna' },
+                  { icon: '🛁', label: 'Whirlpool' },
+                  { icon: '🎵', label: 'Hudba' },
+                ].map((item, index) => (
+                  <div
+                    key={index}
+                    className="bg-dark-800/50 rounded-xl p-3 border border-white/5 flex flex-col items-center justify-center gap-2 hover:bg-dark-800 transition-colors"
+                  >
+                    <span className="text-2xl">{item.icon}</span>
+                    <p className="text-xs text-center text-gray-300">{item.label}</p>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
 
             {/* Location Map */}
-            <div className={business.equipment && business.equipment.length > 0 ? "lg:col-span-1" : "lg:col-span-3"}>
+            <div className="lg:col-span-1">
               <BusinessLocationMap
                 businessName={business.name}
                 location={business.city}

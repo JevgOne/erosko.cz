@@ -6,14 +6,14 @@ import Link from 'next/link';
 
 // Profile types with their colors
 const profileTypes = {
-  solo: { color: 'bg-purple-500' },
-  privat: { color: 'bg-indigo-500' },
-  salon: { color: 'bg-teal-500' },
-  escort_agency: { color: 'bg-pink-500' },
-  digital_agency: { color: 'bg-blue-500' },
-  swingers_club: { color: 'bg-red-500' },
-  night_club: { color: 'bg-orange-500' },
-  strip_club: { color: 'bg-yellow-500' },
+  SOLO: { color: 'bg-purple-500' },
+  PRIVAT: { color: 'bg-indigo-500' },
+  MASSAGE_SALON: { color: 'bg-teal-500' },
+  ESCORT_AGENCY: { color: 'bg-pink-500' },
+  DIGITAL_AGENCY: { color: 'bg-blue-500' },
+  SWINGERS_CLUB: { color: 'bg-red-500' },
+  NIGHT_CLUB: { color: 'bg-orange-500' },
+  STRIP_CLUB: { color: 'bg-yellow-500' },
 };
 
 interface Profile {
@@ -154,13 +154,13 @@ export default function BusinessGrid({ profiles, title, description }: BusinessG
                   <div className="absolute top-4 left-4 z-10">
                     <span className={`${(profileTypes as any)[business.profileType]?.color || 'bg-gray-500'} px-3 py-1.5 rounded-full text-xs font-bold inline-flex items-center justify-center gap-1`}>
                       <Building2 className="w-3 h-3" />
-                      {business.profileType === 'salon'
+                      {business.profileType === 'MASSAGE_SALON'
                         ? 'Masážní salon'
-                        : business.profileType === 'privat'
+                        : business.profileType === 'PRIVAT'
                         ? 'Privát'
-                        : business.profileType === 'escort_agency'
+                        : business.profileType === 'ESCORT_AGENCY'
                         ? 'Escort Agentura'
-                        : business.profileType === 'digital_agency'
+                        : business.profileType === 'DIGITAL_AGENCY'
                         ? 'Digitální agentura'
                         : 'PODNIK'
                       }
@@ -230,13 +230,13 @@ export default function BusinessGrid({ profiles, title, description }: BusinessG
                   {/* Category Badge */}
                   <div className="pt-3 border-t border-white/5">
                     <span className="text-xs px-3 py-1 bg-primary-500/10 text-primary-400 rounded-full inline-flex items-center justify-center">
-                      {business.profileType === 'salon'
+                      {business.profileType === 'MASSAGE_SALON'
                         ? 'Erotické masáže'
-                        : business.profileType === 'privat'
+                        : business.profileType === 'PRIVAT'
                         ? 'Holky na sex'
-                        : business.profileType === 'escort_agency'
+                        : business.profileType === 'ESCORT_AGENCY'
                         ? 'Holky na escort'
-                        : business.profileType === 'digital_agency'
+                        : business.profileType === 'DIGITAL_AGENCY'
                         ? 'Digitální služby'
                         : business.category
                       }

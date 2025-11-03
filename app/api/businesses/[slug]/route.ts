@@ -17,12 +17,14 @@ export async function GET(
           },
         },
         profiles: {
+          where: {
+            approved: true,
+          },
           include: {
             photos: {
-              where: {
-                isMain: true,
+              orderBy: {
+                order: 'asc',
               },
-              take: 1,
             },
           },
         },
