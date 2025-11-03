@@ -1,32 +1,46 @@
 interface ProfileSchemaProps {
   profile: {
-    id: number;
+    id: string;
     name: string;
-    age: number;
-    location: string;
+    city: string;
     category: string;
-    rating: number;
-    reviews: number;
-    verified: boolean;
+    description?: string;
+    phone?: string;
+    rating?: number;
+    reviewCount?: number;
+    verified?: boolean;
+    services?: string[];
   };
 }
 
 export default function ProfileSchema({ profile }: ProfileSchemaProps) {
+  const categoryMap: Record<string, string> = {
+    HOLKY_NA_SEX: 'Escort služby',
+    EROTICKE_MASERKY: 'Erotické masáže',
+    DOMINA: 'BDSM služby',
+    DIGITALNI_SLUZBY: 'Digitální služby',
+  };
+
   const schema = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
-    "name": `${profile.name}, ${profile.age}`,
-    "description": `Profesionální ${profile.category} v ${profile.location}`,
+    "name": profile.name,
+    "description": profile.description || `${categoryMap[profile.category] || profile.category} v ${profile.city}`,
+    "serviceType": categoryMap[profile.category] || profile.category,
+    "telephone": profile.phone,
     "address": {
       "@type": "PostalAddress",
-      "addressLocality": profile.location,
+      "addressLocality": profile.city,
       "addressCountry": "CZ"
     },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": profile.rating,
-      "reviewCount": profile.reviews
-    }
+    ...(profile.rating && profile.reviewCount ? {
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": profile.rating,
+        "reviewCount": profile.reviewCount
+      }
+    } : {}),
+    "url": `https://erosko.cz/divky/${profile.slug || profile.id}`
   };
 
   return (

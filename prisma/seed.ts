@@ -27,30 +27,134 @@ async function main() {
     },
   });
 
-  // Create provider user
-  const providerUser = await prisma.user.create({
-    data: {
-      email: 'provider@erosko.cz',
-      passwordHash: await bcrypt.hash('provider123', 10),
-      role: UserRole.PROVIDER,
-    },
-  });
+  console.log('👤 Created admin user (admin@erosko.cz / admin123)');
 
-  console.log('👤 Created users');
+  // Create Services - podle skutečných escort webů
 
-  // Create Services
-  const services = await Promise.all([
-    prisma.service.create({ data: { name: 'Klasický sex', icon: 'Heart' } }),
-    prisma.service.create({ data: { name: 'Orální sex', icon: 'Smile' } }),
-    prisma.service.create({ data: { name: 'Anální sex', icon: 'Circle' } }),
-    prisma.service.create({ data: { name: 'Escort', icon: 'Users' } }),
-    prisma.service.create({ data: { name: 'Masáže', icon: 'Hand' } }),
-    prisma.service.create({ data: { name: 'BDSM', icon: 'Zap' } }),
-    prisma.service.create({ data: { name: 'Webcam', icon: 'Video' } }),
-    prisma.service.create({ data: { name: 'Phone sex', icon: 'Phone' } }),
+  // ESCORT/SEX SLUŽBY (hlavní kategorie)
+  const escortServices = await Promise.all([
+    // Základní služby
+    prisma.service.create({ data: { name: 'Klasika', description: 'Kategorie: Escort', icon: 'Heart' } }),
+    prisma.service.create({ data: { name: 'Orál', description: 'Kategorie: Escort', icon: 'Smile' } }),
+    prisma.service.create({ data: { name: 'Orál bez', description: 'Kategorie: Escort', icon: 'AlertCircle' } }),
+    prisma.service.create({ data: { name: 'Hluboký orál', description: 'Kategorie: Escort', icon: 'Circle' } }),
+    prisma.service.create({ data: { name: 'Anální sex', description: 'Kategorie: Escort', icon: 'Circle' } }),
+    prisma.service.create({ data: { name: '69', description: 'Kategorie: Escort', icon: 'Infinity' } }),
+    prisma.service.create({ data: { name: 'Líbání', description: 'Kategorie: Escort', icon: 'HeartHandshake' } }),
+
+    // Speciální služby
+    prisma.service.create({ data: { name: 'GFE', description: 'Kategorie: Escort', icon: 'Sparkles' } }),
+    prisma.service.create({ data: { name: 'Escort', description: 'Kategorie: Escort', icon: 'Users' } }),
+    prisma.service.create({ data: { name: 'Doprovod do společnosti', description: 'Kategorie: Escort', icon: 'Users2' } }),
+    prisma.service.create({ data: { name: 'Striptýz', description: 'Kategorie: Escort', icon: 'Music' } }),
+
+    // Skupinové a speciální
+    prisma.service.create({ data: { name: 'Trojka', description: 'Kategorie: Escort', icon: 'Users' } }),
+    prisma.service.create({ data: { name: 'Čtyřka', description: 'Kategorie: Escort', icon: 'Users' } }),
+    prisma.service.create({ data: { name: 'Grupáč', description: 'Kategorie: Escort', icon: 'Users' } }),
+    prisma.service.create({ data: { name: 'Lesbi show', description: 'Kategorie: Escort', icon: 'Users2' } }),
+    prisma.service.create({ data: { name: 'Tvrdý sex', description: 'Kategorie: Escort', icon: 'Zap' } }),
+
+    // Další praktiky
+    prisma.service.create({ data: { name: 'Polykání semene', description: 'Kategorie: Escort', icon: 'Droplet' } }),
+    prisma.service.create({ data: { name: 'Výstřik do pusy', description: 'Kategorie: Escort', icon: 'Droplet' } }),
+    prisma.service.create({ data: { name: 'Fingering', description: 'Kategorie: Escort', icon: 'Hand' } }),
+    prisma.service.create({ data: { name: 'Handjob', description: 'Kategorie: Escort', icon: 'Hand' } }),
+    prisma.service.create({ data: { name: 'Rimming', description: 'Kategorie: Escort', icon: 'Circle' } }),
+    prisma.service.create({ data: { name: 'Lízání análu', description: 'Kategorie: Escort', icon: 'Circle' } }),
+    prisma.service.create({ data: { name: 'Pánský anál', description: 'Kategorie: Escort', icon: 'Circle' } }),
+    prisma.service.create({ data: { name: 'Squirt', description: 'Kategorie: Escort', icon: 'Droplet' } }),
+    prisma.service.create({ data: { name: 'Sex v autě', description: 'Kategorie: Escort', icon: 'Car' } }),
+    prisma.service.create({ data: { name: 'Autoerotika', description: 'Kategorie: Escort', icon: 'Sparkles' } }),
+    prisma.service.create({ data: { name: 'Společnice', description: 'Kategorie: Escort', icon: 'Users' } }),
+    prisma.service.create({ data: { name: 'Milencký azyl', description: 'Kategorie: Escort', icon: 'Heart' } }),
   ]);
 
-  console.log('✅ Created services');
+  // MASÁŽNÍ SLUŽBY
+  const massageServices = await Promise.all([
+    prisma.service.create({ data: { name: 'Erotická masáž', description: 'Kategorie: Masáže', icon: 'Sparkles' } }),
+    prisma.service.create({ data: { name: 'Tantrická masáž', description: 'Kategorie: Masáže', icon: 'Flame' } }),
+    prisma.service.create({ data: { name: 'Masáž prostaty', description: 'Kategorie: Masáže', icon: 'Target' } }),
+    prisma.service.create({ data: { name: 'Nuru masáž', description: 'Kategorie: Masáže', icon: 'Droplet' } }),
+    prisma.service.create({ data: { name: 'Body-to-body masáž', description: 'Kategorie: Masáže', icon: 'Users' } }),
+    prisma.service.create({ data: { name: 'Masáž pro páry', description: 'Kategorie: Masáže', icon: 'Heart' } }),
+    prisma.service.create({ data: { name: 'Masáž penisu', description: 'Kategorie: Masáže', icon: 'Hand' } }),
+    prisma.service.create({ data: { name: 'Pussycat masáž', description: 'Kategorie: Masáže', icon: 'Hand' } }),
+    prisma.service.create({ data: { name: 'Mydlová masáž', description: 'Kategorie: Masáže', icon: 'Droplet' } }),
+  ]);
+
+  // BDSM SLUŽBY
+  const bdsmServices = await Promise.all([
+    prisma.service.create({ data: { name: 'BDSM', description: 'Kategorie: BDSM', icon: 'Zap' } }),
+    prisma.service.create({ data: { name: 'Dominance', description: 'Kategorie: BDSM', icon: 'Crown' } }),
+    prisma.service.create({ data: { name: 'Domina', description: 'Kategorie: BDSM', icon: 'Crown' } }),
+    prisma.service.create({ data: { name: 'Bondáž', description: 'Kategorie: BDSM', icon: 'Link' } }),
+    prisma.service.create({ data: { name: 'Footjob', description: 'Kategorie: BDSM', icon: 'Footprints' } }),
+    prisma.service.create({ data: { name: 'Fisting', description: 'Kategorie: BDSM', icon: 'Hand' } }),
+    prisma.service.create({ data: { name: 'Facesitting', description: 'Kategorie: BDSM', icon: 'User' } }),
+    prisma.service.create({ data: { name: 'Femdom', description: 'Kategorie: BDSM', icon: 'Crown' } }),
+    prisma.service.create({ data: { name: 'Feminizace', description: 'Kategorie: BDSM', icon: 'Sparkles' } }),
+    prisma.service.create({ data: { name: 'S/M', description: 'Kategorie: BDSM', icon: 'Zap' } }),
+    prisma.service.create({ data: { name: 'Strap-on', description: 'Kategorie: BDSM', icon: 'Circle' } }),
+    prisma.service.create({ data: { name: 'Připínák', description: 'Kategorie: BDSM', icon: 'Circle' } }),
+    prisma.service.create({ data: { name: 'Piss', description: 'Kategorie: BDSM', icon: 'Droplet' } }),
+    prisma.service.create({ data: { name: 'Pissing', description: 'Kategorie: BDSM', icon: 'Droplet' } }),
+  ]);
+
+  // ONLINE SLUŽBY
+  const onlineServices = await Promise.all([
+    // Video služby
+    prisma.service.create({ data: { name: 'Webka/video', description: 'Kategorie: Online', icon: 'Video' } }),
+    prisma.service.create({ data: { name: 'Webcam show', description: 'Kategorie: Online', icon: 'Video' } }),
+    prisma.service.create({ data: { name: 'Live cam show', description: 'Kategorie: Online', icon: 'Video' } }),
+    prisma.service.create({ data: { name: 'Video call sex', description: 'Kategorie: Online', icon: 'Video' } }),
+    prisma.service.create({ data: { name: 'Custom videa', description: 'Kategorie: Online', icon: 'Camera' } }),
+    prisma.service.create({ data: { name: 'Video na míru', description: 'Kategorie: Online', icon: 'Camera' } }),
+
+    // Telefonní služby
+    prisma.service.create({ data: { name: 'Sex po telefonu', description: 'Kategorie: Online', icon: 'Phone' } }),
+    prisma.service.create({ data: { name: 'Phone sex', description: 'Kategorie: Online', icon: 'Phone' } }),
+    prisma.service.create({ data: { name: 'Audio call', description: 'Kategorie: Online', icon: 'Phone' } }),
+
+    // Fotografie
+    prisma.service.create({ data: { name: 'Custom fotky', description: 'Kategorie: Online', icon: 'Camera' } }),
+    prisma.service.create({ data: { name: 'Sexy fotky', description: 'Kategorie: Online', icon: 'Camera' } }),
+    prisma.service.create({ data: { name: 'Nahé fotky', description: 'Kategorie: Online', icon: 'Camera' } }),
+    prisma.service.create({ data: { name: 'Feet pics', description: 'Kategorie: Online', icon: 'Camera' } }),
+
+    // Chat a textové služby
+    prisma.service.create({ data: { name: 'Sexting', description: 'Kategorie: Online', icon: 'MessageCircle' } }),
+    prisma.service.create({ data: { name: 'Online chat', description: 'Kategorie: Online', icon: 'MessagesSquare' } }),
+    prisma.service.create({ data: { name: 'Dirty talk', description: 'Kategorie: Online', icon: 'MessageCircle' } }),
+
+    // Platformy a předplatné
+    prisma.service.create({ data: { name: 'OnlyFans', description: 'Kategorie: Online', icon: 'Star' } }),
+    prisma.service.create({ data: { name: 'Premium Snapchat', description: 'Kategorie: Online', icon: 'Camera' } }),
+    prisma.service.create({ data: { name: 'Soukromý Instagram', description: 'Kategorie: Online', icon: 'Instagram' } }),
+    prisma.service.create({ data: { name: 'Telegram premium', description: 'Kategorie: Online', icon: 'Send' } }),
+
+    // Speciální online služby
+    prisma.service.create({ data: { name: 'Dick rating', description: 'Kategorie: Online', icon: 'Star' } }),
+    prisma.service.create({ data: { name: 'Hodnocení penisu', description: 'Kategorie: Online', icon: 'Star' } }),
+    prisma.service.create({ data: { name: 'Virtual girlfriend', description: 'Kategorie: Online', icon: 'Heart' } }),
+    prisma.service.create({ data: { name: 'Virtuální přítelkyně', description: 'Kategorie: Online', icon: 'Heart' } }),
+    prisma.service.create({ data: { name: 'Dominance online', description: 'Kategorie: Online', icon: 'Crown' } }),
+    prisma.service.create({ data: { name: 'JOI (Jerk Off Instructions)', description: 'Kategorie: Online', icon: 'Video' } }),
+    prisma.service.create({ data: { name: 'CEI (Cum Eating Instructions)', description: 'Kategorie: Online', icon: 'Video' } }),
+
+    // Prodej
+    prisma.service.create({ data: { name: 'Použité prádlo', description: 'Kategorie: Online', icon: 'ShoppingBag' } }),
+    prisma.service.create({ data: { name: 'Používané ponožky', description: 'Kategorie: Online', icon: 'ShoppingBag' } }),
+    prisma.service.create({ data: { name: 'Selling worn items', description: 'Kategorie: Online', icon: 'ShoppingBag' } }),
+  ]);
+
+  const services = [...escortServices, ...massageServices, ...bdsmServices, ...onlineServices];
+
+  console.log(`✅ Created ${services.length} services (${escortServices.length} escort, ${massageServices.length} masáže, ${bdsmServices.length} BDSM, ${onlineServices.length} online)`);
+
+  console.log('🎉 Seed completed successfully!');
+  console.log('📝 Note: No demo data created. Register users to add businesses and profiles.');
+  return; // Don't create demo data
 
   // Czech cities
   const cities = ['Praha', 'Brno', 'Ostrava', 'Plzeň', 'Liberec', 'Olomouc', 'České Budějovice', 'Hradec Králové'];

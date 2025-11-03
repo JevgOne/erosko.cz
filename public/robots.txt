@@ -1,0 +1,15 @@
+# Erosko.cz - Robots Configuration
+User-agent: *
+Allow: /
+
+# Block admin panel from all crawlers
+Disallow: /admin
+Disallow: /admin_panel
+Disallow: /api/admin/
+
+# Block auth pages
+Disallow: /prihlaseni
+Disallow: /registrace
+
+# Sitemap (if you add one later)
+# Sitemap: https://erosko.cz/sitemap.xml

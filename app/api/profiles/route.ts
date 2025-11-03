@@ -16,7 +16,26 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, age, description, services, businessId } = body;
+    const {
+      name,
+      age,
+      description,
+      height,
+      weight,
+      bust,
+      hairColor,
+      breastType,
+      role,
+      nationality,
+      languages,
+      orientation,
+      tattoos,
+      piercing,
+      offersEscort,
+      travels,
+      services,
+      businessId
+    } = body;
 
     if (!name || !age) {
       return NextResponse.json(
@@ -75,6 +94,23 @@ export async function POST(request: Request) {
         location: `${business.city}, centrum`,
         profileType: business.profileType, // Typ z podniku
         category, // Automaticky namapovaná kategorie
+        // Fyzické vlastnosti
+        height: height ? parseInt(height) : null,
+        weight: weight ? parseInt(weight) : null,
+        bust: bust || null,
+        hairColor: hairColor || null,
+        breastType: breastType || null,
+        // Další vlastnosti
+        role: role || null,
+        nationality: nationality || null,
+        languages: languages && languages.length > 0 ? JSON.stringify(languages) : null,
+        orientation: orientation || null,
+        tattoos: tattoos || null,
+        piercing: piercing || null,
+        // Možnosti služeb
+        offersEscort: offersEscort || false,
+        travels: travels || false,
+        // Metadata
         ownerId: session.user.id,
         businessId: business.id,
         verified: false,
@@ -82,25 +118,14 @@ export async function POST(request: Request) {
       },
     });
 
-    // Add services
+    // Add services (services array now contains service IDs)
     if (services && services.length > 0) {
-      for (const serviceName of services) {
-        // Find or create service
-        let service = await prisma.service.findUnique({
-          where: { name: serviceName },
-        });
-
-        if (!service) {
-          service = await prisma.service.create({
-            data: { name: serviceName },
-          });
-        }
-
+      for (const serviceId of services) {
         // Link service to profile
         await prisma.profileService.create({
           data: {
             profileId: profile.id,
-            serviceId: service.id,
+            serviceId: serviceId,
           },
         });
       }
@@ -134,7 +159,9 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '18');
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: any = {
+      approved: true, // Only show approved profiles to public
+    };
 
     if (category) {
       where.category = category;

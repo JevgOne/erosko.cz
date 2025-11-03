@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SearchWithMap from '@/components/SearchWithMap';
 import ProfileGrid from '@/components/ProfileGrid';
+import Breadcrumb from '@/components/Breadcrumb';
 import { profiles } from '@/components/TopProfiles';
 import { Sparkles } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
@@ -42,6 +43,8 @@ export default function ErotickeMasazePage() {
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <Breadcrumb items={[{ label: 'Erotické masáže' }]} />
+
           <div className="text-center max-w-3xl mx-auto mb-12">
             <div className="inline-flex items-center space-x-2 glass px-4 py-2 rounded-full mb-6">
               <Sparkles className="w-4 h-4 text-primary-400" />

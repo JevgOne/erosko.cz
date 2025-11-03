@@ -1,35 +1,75 @@
 'use client';
 
 import { useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { profiles } from '@/components/TopProfiles';
-import { Star, MapPin, CheckCircle, Phone, Heart, MessageCircle, Share2, Clock, Building2, Users, Award, Shield, Mail, MessageSquare, ThumbsUp, Globe2 } from 'lucide-react';
+import { Star, MapPin, CheckCircle, Phone, Heart, Globe2, Clock, Building2, Users, Award, Shield, Mail, MessageSquare, ThumbsUp } from 'lucide-react';
 import Link from 'next/link';
 import BusinessLocationMap from '@/components/BusinessLocationMap';
 
 const profileTypes = {
-  solo: { color: 'bg-purple-500', label: 'SOLO' },
-  privat: { color: 'bg-indigo-500', label: 'Privát' },
-  salon: { color: 'bg-teal-500', label: 'Masážní salon' },
-  escort_agency: { color: 'bg-pink-500', label: 'Escort Agentura' },
-  digital_agency: { color: 'bg-blue-500', label: 'Digitální Agentura' },
-  swingers_club: { color: 'bg-red-500', label: 'Swingers klub' },
-  night_club: { color: 'bg-orange-500', label: 'Night Club' },
-  strip_club: { color: 'bg-yellow-500', label: 'Digitální Agentura' },
+  SOLO: { color: 'bg-purple-500', label: 'SOLO' },
+  PRIVAT: { color: 'bg-indigo-500', label: 'Privát' },
+  SALON: { color: 'bg-teal-500', label: 'Masážní salon' },
+  ESCORT_AGENCY: { color: 'bg-pink-500', label: 'Escort Agentura' },
+  DIGITAL_AGENCY: { color: 'bg-blue-500', label: 'Digitální Agentura' },
+  SWINGERS_CLUB: { color: 'bg-red-500', label: 'Swingers klub' },
+  NIGHT_CLUB: { color: 'bg-orange-500', label: 'Night Club' },
+  STRIP_CLUB: { color: 'bg-yellow-500', label: 'Strip Club' },
+};
+
+const czechDays = {
+  monday: 'Pondělí',
+  tuesday: 'Úterý',
+  wednesday: 'Středa',
+  thursday: 'Čtvrtek',
+  friday: 'Pátek',
+  saturday: 'Sobota',
+  sunday: 'Neděle',
 };
 
 export default function BusinessDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const [business, setBusiness] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  const businessProfiles = profiles.filter((p) => {
-    if (!p.businessName) return false;
-    const businessSlug = p.businessName.toLowerCase().replace(/\s+/g, '-');
-    return businessSlug === slug.toLowerCase();
-  });
+  useEffect(() => {
+    async function fetchBusiness() {
+      try {
+        const response = await fetch(`/api/businesses/${slug}`);
+        if (!response.ok) {
+          setError(true);
+          return;
+        }
+        const data = await response.json();
+        setBusiness(data);
+      } catch (err) {
+        console.error('Error fetching business:', err);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-  if (businessProfiles.length === 0) {
+    fetchBusiness();
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <main className="min-h-screen">
+        <Header />
+        <div className="container mx-auto px-4 py-32 text-center">
+          <h1 className="text-4xl font-bold mb-4">Načítání...</h1>
+        </div>
+        <Footer />
+      </main>
+    );
+  }
+
+  if (error || !business) {
     return (
       <main className="min-h-screen">
         <Header />
@@ -39,7 +79,7 @@ export default function BusinessDetailPage() {
             Omlouváme se, tento podnik neexistuje nebo byl odstraněn.
           </p>
           <Link
-            href="/podniky"
+            href="/eroticke-podniky"
             className="px-6 py-3 bg-gradient-to-r from-primary-500 to-pink-500 rounded-lg font-semibold"
           >
             Zpět na podniky
@@ -50,46 +90,46 @@ export default function BusinessDetailPage() {
     );
   }
 
-  const businessInfo = businessProfiles[0];
-  const averageRating = (businessProfiles.reduce((sum, p) => sum + p.rating, 0) / businessProfiles.length).toFixed(1);
-  const totalReviews = businessProfiles.reduce((sum, p) => sum + p.reviews, 0);
+  const averageRating = 4.5; // TODO: Calculate from real reviews
+  const totalReviews = business.profiles?.length * 3 || 0;
 
   function getCategoryInfo(profileType: string) {
     switch (profileType) {
-      case 'salon':
+      case 'SALON':
         return {
           category: 'Erotické masáže',
-          categoryUrl: '/masaze',
+          categoryUrl: '/eroticke-masaze',
           description: 'Profesionální masážní salon s diskrétním prostředím a kvalitními službami.',
         };
-      case 'privat':
+      case 'PRIVAT':
         return {
-          category: 'Holky na sex',
-          categoryUrl: '/escort',
+          category: 'Privát',
+          categoryUrl: '/eroticke-podniky',
           description: 'Privátní prostředí s profesionálními slečnami pro nezapomenutelné chvíle.',
         };
-      case 'escort_agency':
+      case 'ESCORT_AGENCY':
         return {
-          category: 'Holky na escort',
+          category: 'Escort agentura',
           categoryUrl: '/escort',
           description: 'Prémiová escort agentura s ověřenými a diskrétními slečnami.',
         };
-      case 'digital_agency':
+      case 'DIGITAL_AGENCY':
         return {
           category: 'Digitální služby',
-          categoryUrl: '/online-sex',
+          categoryUrl: '/eroticke-podniky',
           description: 'Online erotické služby - video hovory, cam shows a premium obsah.',
         };
       default:
         return {
           category: 'Erotické služby',
-          categoryUrl: '/',
+          categoryUrl: '/eroticke-podniky',
           description: 'Profesionální erotické služby v příjemném prostředí.',
         };
     }
   }
 
-  const categoryInfo = getCategoryInfo(businessInfo.profileType);
+  const categoryInfo = getCategoryInfo(business.profileType);
+  const mainPhoto = business.photos?.find((p: any) => p.isMain) || business.photos?.[0];
 
   return (
     <main className="min-h-screen bg-dark-950">
@@ -108,18 +148,26 @@ export default function BusinessDetailPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left: Main Photo */}
               <div className="relative h-full min-h-[600px] rounded-2xl overflow-hidden group cursor-pointer">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/30 to-purple-500/30"></div>
+                {mainPhoto ? (
+                  <img
+                    src={mainPhoto.url}
+                    alt={business.name}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/30 to-purple-500/30"></div>
+                )}
 
                 {/* Business Type Badge */}
                 <div className="absolute top-4 left-4 z-10">
-                  <span className={`${profileTypes[businessInfo.profileType].color} px-4 py-2 rounded-full text-sm font-bold inline-flex items-center gap-2`}>
+                  <span className={`${profileTypes[business.profileType]?.color || 'bg-gray-500'} px-4 py-2 rounded-full text-sm font-bold inline-flex items-center gap-2`}>
                     <Building2 className="w-4 h-4" />
-                    {profileTypes[businessInfo.profileType].label}
+                    {profileTypes[business.profileType]?.label || business.profileType}
                   </span>
                 </div>
 
                 {/* Verified Badge */}
-                {businessInfo.verified && (
+                {business.verified && (
                   <div className="absolute top-4 right-4 z-10">
                     <span className="bg-green-500 px-3 py-1.5 rounded-full text-sm font-semibold inline-flex items-center gap-1.5">
                       <CheckCircle className="w-4 h-4" />
@@ -128,12 +176,23 @@ export default function BusinessDetailPage() {
                   </div>
                 )}
 
+                {/* New Badge */}
+                {business.isNew && (
+                  <div className="absolute top-16 right-4 z-10">
+                    <span className="bg-blue-500 px-3 py-1.5 rounded-full text-sm font-semibold">
+                      NOVÝ
+                    </span>
+                  </div>
+                )}
+
                 {/* More Photos Badge */}
-                <div className="absolute bottom-4 right-4 z-10">
-                  <span className="glass px-4 py-2 rounded-xl text-sm font-semibold">
-                    +10 fotek
-                  </span>
-                </div>
+                {business.photos && business.photos.length > 1 && (
+                  <div className="absolute bottom-4 right-4 z-10">
+                    <span className="glass px-4 py-2 rounded-xl text-sm font-semibold">
+                      +{business.photos.length - 1} fotek
+                    </span>
+                  </div>
+                )}
 
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all"></div>
               </div>
@@ -143,8 +202,8 @@ export default function BusinessDetailPage() {
                 {/* Business Name and Category */}
                 <div>
                 <h1 className="text-5xl font-bold mb-3 flex items-center gap-3">
-                  {businessInfo.businessName}
-                  {businessInfo.verified && (
+                  {business.name}
+                  {business.verified && (
                     <Shield className="w-8 h-8 text-green-500" />
                   )}
                 </h1>
@@ -172,13 +231,13 @@ export default function BusinessDetailPage() {
                 <div className="bg-primary-500/20 backdrop-blur-sm px-6 py-4 rounded-xl">
                   <div className="flex items-center gap-2 mb-1">
                     <Users className="w-6 h-6 text-primary-400" />
-                    <span className="text-3xl font-bold">{businessProfiles.length}</span>
+                    <span className="text-3xl font-bold">{business.profiles?.length || 0}</span>
                   </div>
                   <p className="text-sm text-gray-400">Dívek k dispozici</p>
                 </div>
 
                 {/* Verified Business */}
-                {businessInfo.verified && (
+                {business.verified && (
                   <div className="bg-green-500/20 backdrop-blur-sm px-6 py-4 rounded-xl">
                     <div className="flex items-center gap-2 mb-1">
                       <Shield className="w-6 h-6 text-green-400" />
@@ -194,59 +253,57 @@ export default function BusinessDetailPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 text-lg">
                     <MapPin className="w-6 h-6 text-primary-400 flex-shrink-0" />
-                    <span>{businessInfo.location}</span>
+                    <span>{business.city}{business.address ? `, ${business.address}` : ''}</span>
                   </div>
                   <div className="flex items-center gap-3 text-lg">
                     <Phone className="w-6 h-6 text-primary-400 flex-shrink-0" />
-                    <span className="font-semibold">{businessInfo.phone}</span>
+                    <span className="font-semibold">{business.phone}</span>
                   </div>
-                  <div className="flex items-center gap-3 text-lg">
-                    <Globe2 className="w-6 h-6 text-primary-400 flex-shrink-0" />
-                    <a
-                      href="https://www.example-salon.cz"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-primary-400 transition-colors"
-                    >
-                      www.example-salon.cz
-                    </a>
-                  </div>
-                  <div className="flex items-center gap-3 text-lg">
-                    <Mail className="w-6 h-6 text-primary-400 flex-shrink-0" />
-                    <a
-                      href="mailto:info@example-salon.cz"
-                      className="hover:text-primary-400 transition-colors"
-                    >
-                      info@example-salon.cz
-                    </a>
-                  </div>
+                  {business.website && (
+                    <div className="flex items-center gap-3 text-lg">
+                      <Globe2 className="w-6 h-6 text-primary-400 flex-shrink-0" />
+                      <a
+                        href={business.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-primary-400 transition-colors truncate"
+                      >
+                        {business.website.replace('https://', '').replace('http://', '')}
+                      </a>
+                    </div>
+                  )}
+                  {business.email && (
+                    <div className="flex items-center gap-3 text-lg">
+                      <Mail className="w-6 h-6 text-primary-400 flex-shrink-0" />
+                      <a
+                        href={`mailto:${business.email}`}
+                        className="hover:text-primary-400 transition-colors truncate"
+                      >
+                        {business.email}
+                      </a>
+                    </div>
+                  )}
                 </div>
 
-                {/* Opening Hours - Detailed */}
-                <div className="bg-dark-800/50 rounded-xl p-4 border border-white/5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Clock className="w-5 h-5 text-primary-400" />
-                    <h4 className="font-semibold">Otevírací doba</h4>
+                {/* Opening Hours */}
+                {business.openingHours && (
+                  <div className="bg-dark-800/50 rounded-xl p-4 border border-white/5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Clock className="w-5 h-5 text-primary-400" />
+                      <h4 className="font-semibold">Otevírací doba</h4>
+                    </div>
+                    <div className="space-y-1.5 text-sm">
+                      {Object.entries(business.openingHours).map(([day, hours]: [string, any]) => (
+                        <div key={day} className="flex justify-between items-center">
+                          <span className="text-gray-400">{czechDays[day as keyof typeof czechDays]}</span>
+                          <span className="text-green-400 font-medium">
+                            {hours || 'Zavřeno'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="space-y-1.5 text-sm">
-                    {[
-                      { day: 'Pondělí', hours: '9:00 - 22:00', open: true },
-                      { day: 'Úterý', hours: '9:00 - 22:00', open: true },
-                      { day: 'Středa', hours: '9:00 - 22:00', open: true },
-                      { day: 'Čtvrtek', hours: '9:00 - 22:00', open: true },
-                      { day: 'Pátek', hours: '9:00 - 23:00', open: true },
-                      { day: 'Sobota', hours: '10:00 - 23:00', open: true },
-                      { day: 'Neděle', hours: '10:00 - 22:00', open: true },
-                    ].map((schedule, index) => (
-                      <div key={index} className="flex justify-between items-center">
-                        <span className="text-gray-400">{schedule.day}</span>
-                        <span className={schedule.open ? 'text-green-400 font-medium' : 'text-red-400'}>
-                          {schedule.hours}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -254,7 +311,7 @@ export default function BusinessDetailPage() {
                 {/* Primary Actions */}
                 <div className="grid grid-cols-2 gap-3">
                   <a
-                    href={`tel:${businessInfo.phone}`}
+                    href={`tel:${business.phone}`}
                     className="flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-primary-500 to-pink-500 rounded-xl font-semibold text-lg hover:shadow-2xl hover:shadow-primary-500/50 transition-all"
                   >
                     <Phone className="w-5 h-5" />
@@ -269,14 +326,14 @@ export default function BusinessDetailPage() {
                 {/* Communication Options */}
                 <div className="grid grid-cols-4 gap-2">
                   <a
-                    href={`sms:${businessInfo.phone}`}
+                    href={`sms:${business.phone}`}
                     className="flex flex-col items-center justify-center gap-1 px-3 py-3 glass rounded-xl hover:bg-white/10 transition-all"
                   >
                     <MessageSquare className="w-5 h-5 text-blue-400" />
                     <span className="text-xs font-medium">SMS</span>
                   </a>
                   <a
-                    href={`https://wa.me/${businessInfo.phone.replace(/\s/g, '')}`}
+                    href={`https://wa.me/${business.phone.replace(/\s/g, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex flex-col items-center justify-center gap-1 px-3 py-3 glass rounded-xl hover:bg-white/10 transition-all"
@@ -287,7 +344,7 @@ export default function BusinessDetailPage() {
                     <span className="text-xs font-medium">WhatsApp</span>
                   </a>
                   <a
-                    href={`https://t.me/${businessInfo.phone.replace(/\s/g, '')}`}
+                    href={`https://t.me/${business.phone.replace(/\s/g, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex flex-col items-center justify-center gap-1 px-3 py-3 glass rounded-xl hover:bg-white/10 transition-all"
@@ -298,7 +355,7 @@ export default function BusinessDetailPage() {
                     <span className="text-xs font-medium">Telegram</span>
                   </a>
                   <a
-                    href={`https://maps.google.com/?q=${encodeURIComponent(businessInfo.location)}`}
+                    href={`https://maps.google.com/?q=${encodeURIComponent(`${business.city}, ${business.address || ''}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex flex-col items-center justify-center gap-1 px-3 py-3 glass rounded-xl hover:bg-white/10 transition-all"
@@ -318,211 +375,113 @@ export default function BusinessDetailPage() {
               <Building2 className="w-7 h-7 text-primary-400" />
               O podniku
             </h2>
-            <p className="text-gray-300 text-lg leading-relaxed">
-              Vítejte v {businessInfo.businessName}! Jsme profesionální {profileTypes[businessInfo.profileType].label.toLowerCase()}
-              {' '}v {businessInfo.location} s týmem {businessProfiles.length} krásných a profesionálních dívek.
-              Nabízíme diskrétní prostředí, maximální hygienu a nezapomenutelné zážitky.
-              Naše služby jsou vždy na vysoké úrovni a klademe důraz na spokojenost našich klientů.
-              Těšíme se na vaši návštěvu!
+            <p className="text-gray-300 text-lg leading-relaxed whitespace-pre-wrap">
+              {business.description || `Vítejte v ${business.name}! Jsme profesionální ${profileTypes[business.profileType]?.label.toLowerCase() || 'erotické služby'} v ${business.city}${business.profiles && business.profiles.length > 0 ? ` s týmem ${business.profiles.length} krásných a profesionálních dívek` : ''}. Nabízíme diskrétní prostředí, maximální hygienu a nezapomenutelné zážitky. Naše služby jsou vždy na vysoké úrovni a klademe důraz na spokojenost našich klientů. Těšíme se na vaši návštěvu!`}
             </p>
           </div>
 
-          {/* Services & Location */}
+          {/* Equipment & Location */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Services & Amenities - Compact */}
-            <div className="lg:col-span-2 glass rounded-2xl p-6">
-              <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                <Award className="w-6 h-6 text-primary-400" />
-                Služby a vybavení
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {[
-                  { icon: '💆', label: 'Klasické masáže', url: '/escort?service=klasicke-masaze', type: 'service' },
-                  { icon: '💋', label: 'Erotické masáže', url: '/masaze?service=eroticke-masaze', type: 'service' },
-                  { icon: '🧘', label: 'Tantra', url: '/masaze?service=tantra', type: 'service' },
-                  { icon: '✨', label: 'Body to body', url: '/masaze?service=body-to-body', type: 'service' },
-                  { icon: '🎁', label: 'Happy end', url: '/masaze?service=happy-end', type: 'service' },
-                  { icon: '👑', label: 'VIP balíčky', url: '/escort?service=vip-balicky', type: 'service' },
-                  { icon: '❄️', label: 'Klimatizace', url: '/podniky?amenity=klimatizace', type: 'amenity' },
-                  { icon: '🚿', label: 'Sprcha', url: '/podniky?amenity=sprcha', type: 'amenity' },
-                  { icon: '✅', label: 'Hygiena', url: '/podniky?amenity=hygiena', type: 'amenity' },
-                  { icon: '🅿️', label: 'Parkování', url: '/podniky?amenity=parkovani', type: 'amenity' },
-                  { icon: '🔒', label: 'Diskrétní', url: '/podniky?amenity=diskretni', type: 'amenity' },
-                  { icon: '💳', label: 'Platba kartou', url: '/podniky?amenity=platba-kartou', type: 'amenity' },
-                ].map((item, index) => (
-                  <Link
-                    key={index}
-                    href={item.url}
-                    className="bg-dark-800/50 rounded-xl p-3 border border-white/5 hover:border-primary-500/50 hover:bg-dark-800/80 transition-all text-center cursor-pointer group"
-                  >
-                    <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">{item.icon}</div>
-                    <p className="text-xs text-gray-300 group-hover:text-primary-400 transition-colors">{item.label}</p>
-                  </Link>
-                ))}
+            {/* Equipment */}
+            {business.equipment && business.equipment.length > 0 && (
+              <div className="lg:col-span-2 glass rounded-2xl p-6">
+                <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                  <Award className="w-6 h-6 text-primary-400" />
+                  Vybavení
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {business.equipment.map((item: string, index: number) => (
+                    <div
+                      key={index}
+                      className="bg-dark-800/50 rounded-xl p-3 border border-white/5 text-center"
+                    >
+                      <p className="text-sm text-gray-300">{item}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Location Map */}
-            <div className="lg:col-span-1">
+            <div className={business.equipment && business.equipment.length > 0 ? "lg:col-span-1" : "lg:col-span-3"}>
               <BusinessLocationMap
-                businessName={businessInfo.businessName || 'Podnik'}
-                location={businessInfo.location}
-                fullAddress={businessInfo.location}
+                businessName={business.name}
+                location={business.city}
+                fullAddress={`${business.city}${business.address ? `, ${business.address}` : ''}`}
               />
             </div>
           </div>
 
-          {/* Reviews & Ratings Section */}
-          <div className="glass rounded-2xl p-8 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-bold flex items-center gap-2">
-                <Star className="w-7 h-7 text-yellow-400" fill="currentColor" />
-                Hodnocení a recenze ({totalReviews})
+          {/* Workers/Profiles Section */}
+          {business.profiles && business.profiles.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-4xl font-bold mb-6 flex items-center gap-3">
+                <Users className="w-8 h-8 text-primary-400" />
+                Naše dívky ({business.profiles.length})
               </h2>
-              <button className="px-6 py-3 bg-gradient-to-r from-primary-500 to-pink-500 rounded-xl font-semibold hover:shadow-lg transition-all">
-                Přidat hodnocení
-              </button>
-            </div>
 
-            {/* Rating Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 pb-8 border-b border-white/10">
-              {/* Overall Rating */}
-              <div className="text-center md:col-span-1">
-                <div className="text-6xl font-bold mb-2">{averageRating}</div>
-                <div className="flex items-center justify-center gap-1 mb-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="w-6 h-6 text-yellow-400" fill="currentColor" />
-                  ))}
-                </div>
-                <p className="text-gray-400">Na základě {totalReviews} hodnocení</p>
-              </div>
+              {/* Profiles Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                {business.profiles.map((profile: any) => (
+                  <Link
+                    key={profile.id}
+                    href={`/profil/${profile.slug || profile.id}`}
+                    className="glass rounded-2xl overflow-hidden card-hover group"
+                  >
+                    {/* Image Container */}
+                    <div className="relative h-64 overflow-hidden bg-dark-800">
+                      {profile.photos && profile.photos.length > 0 ? (
+                        <img
+                          src={profile.photos[0].url}
+                          alt={profile.name}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-purple-500/20"></div>
+                      )}
 
-              {/* Rating Breakdown */}
-              <div className="md:col-span-2 space-y-2">
-                {[5, 4, 3, 2, 1].map((rating) => (
-                  <div key={rating} className="flex items-center gap-3">
-                    <span className="text-sm font-medium w-12">{rating} hvězd</span>
-                    <div className="flex-1 h-3 bg-dark-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full"
-                        style={{ width: `${Math.random() * 60 + 20}%` }}
-                      ></div>
+                      {/* Badges */}
+                      <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
+                        {profile.isNew && (
+                          <span className="bg-blue-500 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                            Nový
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-dark-950 via-dark-950/50 to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
                     </div>
-                    <span className="text-sm text-gray-400 w-12 text-right">{Math.floor(Math.random() * 50)}</span>
-                  </div>
+
+                    {/* Content */}
+                    <div className="p-3">
+                      <h3 className="text-base font-semibold mb-1 truncate flex items-center gap-1">
+                        {profile.verified && (
+                          <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
+                        )}
+                        <span>{profile.name}{profile.age ? `, ${profile.age}` : ''}</span>
+                      </h3>
+
+                      <div className="flex items-center justify-between text-xs mb-2">
+                        <span className="text-gray-500 truncate">{profile.category || 'Escort'}</span>
+                        <div className="flex items-center space-x-1">
+                          <Star className="w-3 h-3 text-yellow-400" fill="currentColor" />
+                          <span className="font-medium">4.5</span>
+                        </div>
+                      </div>
+
+                      {profile.phone && (
+                        <div className="text-xs text-gray-400">
+                          <Phone className="w-3 h-3 inline mr-1" />
+                          {profile.phone}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
                 ))}
               </div>
             </div>
-
-            {/* Sample Reviews */}
-            <div className="space-y-4">
-              {[
-                { name: 'Jan K.', rating: 5, date: 'Před 2 dny', text: 'Perfektní služby, krásné prostředí a milý personál. Určitě se vrátím!' },
-                { name: 'Petr M.', rating: 5, date: 'Před týdnem', text: 'Skvělé masáže, profesionální přístup. Doporučuji!' },
-                { name: 'Martin S.', rating: 4, date: 'Před 2 týdny', text: 'Velmi příjemné prostředí, čisté a diskrétní. Jen parkování mohlo být lepší.' },
-              ].map((review, index) => (
-                <div key={index} className="bg-dark-800/50 rounded-xl p-5 border border-white/5">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <div className="font-semibold mb-1">{review.name}</div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-0.5">
-                          {[...Array(review.rating)].map((_, i) => (
-                            <Star key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" />
-                          ))}
-                        </div>
-                        <span className="text-xs text-gray-500">{review.date}</span>
-                      </div>
-                    </div>
-                    <button className="text-gray-400 hover:text-primary-400 transition-colors">
-                      <ThumbsUp className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <p className="text-gray-300">{review.text}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Show More Button */}
-            <div className="text-center mt-6">
-              <button className="px-6 py-3 glass rounded-xl font-medium hover:bg-white/10 transition-all">
-                Zobrazit všechna hodnocení ({totalReviews})
-              </button>
-            </div>
-          </div>
-
-          {/* Workers/Profiles Section */}
-          <div className="mb-8">
-            <h2 className="text-4xl font-bold mb-6 flex items-center gap-3">
-              <Users className="w-8 h-8 text-primary-400" />
-              Naše dívky ({businessProfiles.length})
-            </h2>
-
-            {/* Profiles Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-              {businessProfiles.map((profile) => (
-                <Link
-                  key={profile.id}
-                  href={`/profil/${profile.id}`}
-                  className="glass rounded-2xl overflow-hidden card-hover group"
-                >
-                  {/* Image Container */}
-                  <div className="relative h-64 overflow-hidden bg-dark-800">
-                    {/* Placeholder with gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-purple-500/20"></div>
-
-                    {/* Badges */}
-                    <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
-                      {profile.isNew && (
-                        <span className="bg-blue-500 px-1.5 py-0.5 rounded text-[10px] font-semibold">
-                          Nový
-                        </span>
-                      )}
-                      {profile.isPopular && (
-                        <span className="bg-orange-500 px-1.5 py-0.5 rounded text-[10px] font-semibold flex items-center space-x-0.5">
-                          <span className="text-[9px]">🔥</span>
-                          <span>Top</span>
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Online Status */}
-                    {profile.isOnline && (
-                      <div className="absolute top-2 right-2 z-10">
-                        <span className="w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
-                      </div>
-                    )}
-
-                    {/* Hover Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-dark-950 via-dark-950/50 to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-3">
-                    <h3 className="text-base font-semibold mb-1 truncate flex items-center gap-1">
-                      {profile.verified && (
-                        <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
-                      )}
-                      <span>{profile.name}, {profile.age}</span>
-                    </h3>
-
-                    <div className="flex items-center justify-between text-xs mb-2">
-                      <span className="text-gray-500 truncate">{profile.category}</span>
-                      <div className="flex items-center space-x-1">
-                        <Star className="w-3 h-3 text-yellow-400" fill="currentColor" />
-                        <span className="font-medium">{profile.rating}</span>
-                      </div>
-                    </div>
-
-                    <div className="text-xs text-gray-400">
-                      <Phone className="w-3 h-3 inline mr-1" />
-                      {profile.phone}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
       </section>
 

@@ -38,7 +38,7 @@ export default function TopProfiles() {
           {profiles.slice(0, 15).map((profile) => (
             <Link
               key={profile.id}
-              href={`/profil/${profile.id}`}
+              href={`/divky/${profile.slug || profile.id}`}
               className="glass rounded-2xl overflow-hidden card-hover group"
             >
               {/* Image Container */}

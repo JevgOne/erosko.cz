@@ -23,11 +23,11 @@ const profileTypes = {
 
 export default function ProfileDetailPage() {
   const params = useParams();
-  const profileId = parseInt(params.id as string);
+  const slug = params.slug as string;
   const [activeTab, setActiveTab] = useState('o-me');
 
-  // Find the profile by ID
-  const profile = profiles.find(p => p.id === profileId);
+  // Find the profile by slug
+  const profile = profiles.find(p => p.slug === slug);
 
   if (!profile) {
     return (

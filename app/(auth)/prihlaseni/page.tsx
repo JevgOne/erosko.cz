@@ -9,7 +9,7 @@ import Footer from '@/components/Footer';
 
 export default function PrihlaseniPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,13 +21,13 @@ export default function PrihlaseniPage() {
 
     try {
       const result = await signIn('credentials', {
-        email,
+        phone,
         password,
         redirect: false,
       });
 
       if (result?.error) {
-        setError('Nesprávný email nebo heslo');
+        setError('Nesprávné telefonní číslo nebo heslo');
         return;
       }
 
@@ -71,23 +71,29 @@ export default function PrihlaseniPage() {
                 )}
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium mb-2">
-                    Email
+                  <label htmlFor="phone" className="block text-sm font-medium mb-2">
+                    Telefonní číslo
                   </label>
                   <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    type="tel"
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                     className="w-full px-4 py-3 rounded-lg bg-dark-800 border border-white/10 focus:border-primary-500 focus:outline-none transition-colors"
+                    placeholder="+420 123 456 789"
                     required
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium mb-2">
-                    Heslo
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label htmlFor="password" className="block text-sm font-medium">
+                      Heslo
+                    </label>
+                    <Link href="/zapomenute-heslo" className="text-xs text-primary-400 hover:text-primary-300">
+                      Zapomněli jste heslo?
+                    </Link>
+                  </div>
                   <input
                     type="password"
                     id="password"
@@ -107,21 +113,9 @@ export default function PrihlaseniPage() {
                 </button>
 
                 <div className="text-center text-sm text-gray-400">
-                  Nemáte účet?{' '}
-                  <Link href="/registrace" className="text-primary-400 hover:text-primary-300">
-                    Zaregistrujte se
-                  </Link>
+                  Nemáte účet? Kontaktujte administrátora pro vytvoření účtu.
                 </div>
               </form>
-
-              {/* Testovací údaje pro vývoj */}
-              <div className="mt-6 pt-6 border-t border-white/10">
-                <p className="text-xs text-gray-500 text-center mb-2">Testovací účty:</p>
-                <div className="text-xs text-gray-500 space-y-1">
-                  <div>Admin: admin@erosko.cz / admin123</div>
-                  <div>Provider: provider@erosko.cz / provider123</div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

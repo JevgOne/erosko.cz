@@ -2,23 +2,27 @@ import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
+import { normalizePhoneNumber } from '@/lib/phone-utils';
 
 export default {
   providers: [
     Credentials({
       name: 'credentials',
       credentials: {
-        email: { label: 'Email', type: 'email' },
+        phone: { label: 'Telefon', type: 'tel' },
         password: { label: 'Heslo', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.phone || !credentials?.password) {
           return null;
         }
 
+        // Normalize phone number
+        const normalizedPhone = normalizePhoneNumber(credentials.phone as string);
+
         const user = await prisma.user.findUnique({
           where: {
-            email: credentials.email as string,
+            phone: normalizedPhone,
           },
         });
 
@@ -37,7 +41,8 @@ export default {
 
         return {
           id: user.id,
-          email: user.email,
+          phone: user.phone,
+          email: user.email || undefined,
           role: user.role,
         };
       },
@@ -60,6 +65,17 @@ export default {
         session.user.role = token.role as string;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // Check if user just logged in
+      if (url.startsWith(baseUrl)) {
+        // If returning to callback, redirect based on role
+        if (url === baseUrl || url === `${baseUrl}/`) {
+          return `${baseUrl}/inzerent_dashboard`;
+        }
+        return url;
+      }
+      return baseUrl;
     },
   },
 } satisfies NextAuthConfig;

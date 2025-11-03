@@ -2,27 +2,32 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 import { UserRole, ProfileType, Category } from '@prisma/client';
+import { saveBase64Photo } from '@/lib/photo-upload';
+import { normalizePhoneNumber } from '@/lib/phone-utils';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password, role, profile } = body;
+    const { phone, email, password, role, profile } = body;
 
-    if (!email || !password) {
+    if (!phone || !password) {
       return NextResponse.json(
-        { error: 'Email a heslo jsou povinné' },
+        { error: 'Telefonní číslo a heslo jsou povinné' },
         { status: 400 }
       );
     }
 
+    // Normalize phone number
+    const normalizedPhone = normalizePhoneNumber(phone);
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { phone: normalizedPhone },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'Uživatel s tímto emailem již existuje' },
+        { error: 'Uživatel s tímto telefonním číslem již existuje' },
         { status: 400 }
       );
     }
@@ -33,7 +38,8 @@ export async function POST(request: Request) {
     // Create user with profile if provider
     const user = await prisma.user.create({
       data: {
-        email,
+        phone: normalizedPhone,
+        email: email || null,
         passwordHash: hashedPassword,
         role: role || UserRole.USER,
       },
@@ -48,7 +54,9 @@ export async function POST(request: Request) {
 
       if (isBusinessType) {
         // Create Business for PODNIK types
-        const slug = `${profile.name.toLowerCase().replace(/\s+/g, '-')}-${profile.city.toLowerCase()}-${Date.now()}`;
+        // Use phone number (without spaces and +) instead of timestamp
+        const phoneSlug = profile.phone.replace(/[\s\+\-\(\)]/g, '');
+        const slug = `${profile.name.toLowerCase().replace(/\s+/g, '-')}-${profile.city.toLowerCase().replace(/\s+/g, '-')}-${phoneSlug}`;
 
         const newBusiness = await prisma.business.create({
           data: {
@@ -67,10 +75,26 @@ export async function POST(request: Request) {
           },
         });
 
+        // Save photos if provided
+        if (profile.photos && profile.photos.length > 0) {
+          for (let i = 0; i < profile.photos.length; i++) {
+            const photoUrl = await saveBase64Photo(profile.photos[i], 'businesses');
+            await prisma.photo.create({
+              data: {
+                url: photoUrl,
+                businessId: newBusiness.id,
+                order: i,
+                isMain: i === 0, // První fotka je hlavní
+              },
+            });
+          }
+        }
+
         return NextResponse.json(
           {
             user: {
               id: user.id,
+              phone: user.phone,
               email: user.email,
               role: user.role,
               business: {
@@ -84,7 +108,9 @@ export async function POST(request: Request) {
         );
       } else {
         // Create Profile for SOLO types
-        const slug = `${profile.name.toLowerCase().replace(/\s+/g, '-')}-${profile.city.toLowerCase()}-${Date.now()}`;
+        // Use phone number (without spaces and +) instead of timestamp
+        const phoneSlug = profile.phone.replace(/[\s\+\-\(\)]/g, '');
+        const slug = `${profile.name.toLowerCase().replace(/\s+/g, '-')}-${profile.city.toLowerCase().replace(/\s+/g, '-')}-${phoneSlug}`;
 
         const newProfile = await prisma.profile.create({
           data: {
@@ -129,10 +155,26 @@ export async function POST(request: Request) {
           }
         }
 
+        // Save photos if provided
+        if (profile.photos && profile.photos.length > 0) {
+          for (let i = 0; i < profile.photos.length; i++) {
+            const photoUrl = await saveBase64Photo(profile.photos[i], 'profiles');
+            await prisma.photo.create({
+              data: {
+                url: photoUrl,
+                profileId: newProfile.id,
+                order: i,
+                isMain: i === 0, // První fotka je hlavní
+              },
+            });
+          }
+        }
+
         return NextResponse.json(
           {
             user: {
               id: user.id,
+              phone: user.phone,
               email: user.email,
               role: user.role,
               profile: {
@@ -151,6 +193,7 @@ export async function POST(request: Request) {
       {
         user: {
           id: user.id,
+          phone: user.phone,
           email: user.email,
           role: user.role,
         },

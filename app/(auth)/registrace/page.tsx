@@ -28,7 +28,8 @@ export default function RegistracePage() {
   const [error, setError] = useState('');
 
   // Základní údaje
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');  // Primární přihlášení
+  const [email, setEmail] = useState('');  // Volitelné pro notifikace
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<'USER' | 'PROVIDER'>('USER');
@@ -40,7 +41,7 @@ export default function RegistracePage() {
   const [age, setAge] = useState('');
   const [city, setCity] = useState('');
   const [address, setAddress] = useState('');
-  const [phone, setPhone] = useState('');
+  // phone je už deklarováno výše jako primární přihlašovací údaj
   const [businessName, setBusinessName] = useState('');
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [selectedMassageTypes, setSelectedMassageTypes] = useState<string[]>([]);
@@ -231,6 +232,19 @@ export default function RegistracePage() {
     if (!files) return;
 
     const newFiles = Array.from(files);
+
+    // Kontrola formátů - odmítnout HEIC
+    const invalidFiles = newFiles.filter(file => {
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      return extension === 'heic' || extension === 'heif';
+    });
+
+    if (invalidFiles.length > 0) {
+      setError('HEIC formát není podporován. Použijte prosím JPG, PNG nebo WEBP. Na iPhone: Nastavení → Fotoaparát → Formáty → "Nejvíce kompatibilní"');
+      e.target.value = ''; // Reset input
+      return;
+    }
+
     const totalPhotos = photos.length + newFiles.length;
 
     if (totalPhotos > 10) {
@@ -260,8 +274,8 @@ export default function RegistracePage() {
     setError('');
 
     // Validace
-    if (!email || !password) {
-      setError('Email a heslo jsou povinné');
+    if (!phone || !password) {
+      setError('Telefonní číslo a heslo jsou povinné');
       return;
     }
 
@@ -276,7 +290,7 @@ export default function RegistracePage() {
     }
 
     if (role === 'PROVIDER') {
-      if (!city || !phone) {
+      if (!city) {
         setError('Vyplňte všechny povinné údaje profilu');
         return;
       }
@@ -319,11 +333,23 @@ export default function RegistracePage() {
         }
       }
 
+      // Převést fotky na base64 pro posílání v JSON
+      const photoBase64Array: string[] = [];
+      for (const photo of photos) {
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(photo);
+        });
+        photoBase64Array.push(base64);
+      }
+
       const response = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email,
+          phone,
+          email: email || undefined,
           password,
           role,
           ...(role === 'PROVIDER' && {
@@ -338,6 +364,7 @@ export default function RegistracePage() {
               businessName: profileType !== 'SOLO' ? businessName : null,
               services: profileType === 'SOLO' ? allServices : [],
               equipment: selectedEquipment,
+              photos: photoBase64Array, // Přidáme fotky jako base64
               // Detailní údaje pro SOLO
               ...(profileType === 'SOLO' && {
                 description,
@@ -450,8 +477,26 @@ export default function RegistracePage() {
                     </div>
 
                     <div>
+                      <label htmlFor="phone" className="block text-sm font-medium mb-2">
+                        Telefonní číslo *
+                      </label>
+                      <input
+                        type="tel"
+                        id="phone"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full px-4 py-3 rounded-lg bg-dark-800 border border-white/10 focus:border-primary-500 focus:outline-none transition-colors"
+                        placeholder="+420 123 456 789"
+                        required
+                      />
+                      <p className="text-xs text-gray-400 mt-1">
+                        Pro přihlášení do aplikace
+                      </p>
+                    </div>
+
+                    <div>
                       <label htmlFor="email" className="block text-sm font-medium mb-2">
-                        Email
+                        Email (volitelné)
                       </label>
                       <input
                         type="email"
@@ -459,13 +504,16 @@ export default function RegistracePage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full px-4 py-3 rounded-lg bg-dark-800 border border-white/10 focus:border-primary-500 focus:outline-none transition-colors"
-                        required
+                        placeholder="pro@notifikace.cz"
                       />
+                      <p className="text-xs text-gray-400 mt-1">
+                        Pro zasílání notifikací
+                      </p>
                     </div>
 
                     <div>
                       <label htmlFor="password" className="block text-sm font-medium mb-2">
-                        Heslo
+                        Heslo *
                       </label>
                       <input
                         type="password"
@@ -473,6 +521,7 @@ export default function RegistracePage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="w-full px-4 py-3 rounded-lg bg-dark-800 border border-white/10 focus:border-primary-500 focus:outline-none transition-colors"
+                        placeholder="Minimálně 6 znaků"
                         required
                         minLength={6}
                       />
@@ -480,7 +529,7 @@ export default function RegistracePage() {
 
                     <div>
                       <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
-                        Potvrzení hesla
+                        Potvrzení hesla *
                       </label>
                       <input
                         type="password"
@@ -488,6 +537,7 @@ export default function RegistracePage() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         className="w-full px-4 py-3 rounded-lg bg-dark-800 border border-white/10 focus:border-primary-500 focus:outline-none transition-colors"
+                        placeholder="Zadejte heslo znovu"
                         required
                         minLength={6}
                       />
@@ -893,7 +943,7 @@ export default function RegistracePage() {
                               </div>
                               <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/jpeg,image/jpg,image/png,image/webp"
                                 multiple
                                 onChange={handlePhotoChange}
                                 className="hidden"
@@ -1045,7 +1095,7 @@ export default function RegistracePage() {
                               </div>
                               <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/jpeg,image/jpg,image/png,image/webp"
                                 multiple
                                 onChange={handlePhotoChange}
                                 className="hidden"

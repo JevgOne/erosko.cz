@@ -94,7 +94,7 @@ export default function PridatInzeratPage() {
       }
 
       // Úspěch - přesměruj na profil
-      router.push(`/profil/${data.profile.slug}`);
+      router.push(`/divky/${data.profile.slug}`);
     } catch (err: any) {
       setError(err.message);
     } finally {

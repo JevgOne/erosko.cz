@@ -1,0 +1,1272 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import Header from '@/components/Header';
+import {
+  LayoutDashboard, Users, Building2, UserCircle, MessageSquare,
+  CreditCard, Image as ImageIcon, CheckCircle, XCircle, Eye,
+  TrendingUp, AlertCircle, Shield, Search
+} from 'lucide-react';
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+type MenuItem = 'dashboard' | 'users' | 'businesses' | 'profiles' | 'pending-changes' | 'reviews' | 'payments' | 'banners';
+
+export default function AdminPanel() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const [activeSection, setActiveSection] = useState<MenuItem>('dashboard');
+  const [loading, setLoading] = useState(true);
+
+  // Data states
+  const [stats, setStats] = useState<any>(null);
+  const [users, setUsers] = useState<any[]>([]);
+  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [pendingChanges, setPendingChanges] = useState<any[]>([]);
+
+  // Search and expand states for users
+  const [userSearchQuery, setUserSearchQuery] = useState<string>('');
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    if (status === 'unauthenticated') {
+      router.push('/prihlaseni');
+      return;
+    }
+
+    // Check if user is admin
+    if (session?.user && session.user.role !== 'ADMIN') {
+      router.push('/inzerent_dashboard');
+      return;
+    }
+
+    if (session?.user) {
+      fetchAdminData();
+    }
+  }, [status, session, router]);
+
+  const fetchAdminData = async () => {
+    setLoading(true);
+    try {
+      const [statsRes, usersRes, businessesRes, profilesRes, changesRes] = await Promise.all([
+        fetch('/api/admin/stats'),
+        fetch('/api/admin/users'),
+        fetch('/api/admin/businesses'),
+        fetch('/api/admin/profiles'),
+        fetch('/api/admin/pending-changes'),
+      ]);
+
+      if (statsRes.ok) {
+        const data = await statsRes.json();
+        setStats(data);
+      }
+
+      if (usersRes.ok) {
+        const data = await usersRes.json();
+        setUsers(data.users || []);
+      }
+
+      if (businessesRes.ok) {
+        const data = await businessesRes.json();
+        setBusinesses(data.businesses || []);
+      }
+
+      if (profilesRes.ok) {
+        const data = await profilesRes.json();
+        setProfiles(data.profiles || []);
+      }
+
+      if (changesRes.ok) {
+        const data = await changesRes.json();
+        setPendingChanges(data.changes || []);
+      }
+    } catch (error) {
+      console.error('Error fetching admin data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async (type: 'business' | 'profile', id: string, approved: boolean) => {
+    try {
+      const response = await fetch('/api/admin/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, id, approved }),
+      });
+
+      if (response.ok) {
+        fetchAdminData(); // Reload data
+        alert(approved ? 'Úspěšně schváleno!' : 'Schválení zrušeno');
+      }
+    } catch (error) {
+      console.error('Error approving:', error);
+      alert('Chyba při schvalování');
+    }
+  };
+
+  const handleVerify = async (type: 'business' | 'profile', id: string, verified: boolean) => {
+    try {
+      const response = await fetch('/api/admin/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, id, verified }),
+      });
+
+      if (response.ok) {
+        fetchAdminData(); // Reload data
+        alert(verified ? 'Úspěšně ověřeno!' : 'Ověření zrušeno');
+      }
+    } catch (error) {
+      console.error('Error verifying:', error);
+      alert('Chyba při ověřování');
+    }
+  };
+
+  const handleReviewChange = async (changeId: string, action: 'approve' | 'reject', notes?: string) => {
+    try {
+      const response = await fetch('/api/admin/pending-changes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ changeId, action, notes }),
+      });
+
+      if (response.ok) {
+        fetchAdminData(); // Reload data
+        alert(action === 'approve' ? 'Změna schválena!' : 'Změna zamítnuta');
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Chyba při zpracování změny');
+      }
+    } catch (error) {
+      console.error('Error reviewing change:', error);
+      alert('Chyba při zpracování změny');
+    }
+  };
+
+  const handleDeleteBusiness = async (businessId: string) => {
+    if (!confirm('Opravdu chcete smazat tento podnik? Tato akce je nevratná.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/businesses/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId }),
+      });
+
+      if (response.ok) {
+        fetchAdminData(); // Reload data
+        alert('Podnik úspěšně smazán!');
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Chyba při mazání podniku');
+      }
+    } catch (error) {
+      console.error('Error deleting business:', error);
+      alert('Chyba při mazání podniku');
+    }
+  };
+
+  const handleDeleteProfile = async (profileId: string) => {
+    if (!confirm('Opravdu chcete smazat tento profil? Tato akce je nevratná.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/profiles/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId }),
+      });
+
+      if (response.ok) {
+        fetchAdminData(); // Reload data
+        alert('Profil úspěšně smazán!');
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Chyba při mazání profilu');
+      }
+    } catch (error) {
+      console.error('Error deleting profile:', error);
+      alert('Chyba při mazání profilu');
+    }
+  };
+
+  if (status === 'loading' || loading) {
+    return (
+      <main className="min-h-screen bg-dark-900">
+        <Header />
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-400">Načítání admin panelu...</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-dark-900">
+      <Header />
+
+      <div className="pt-20">
+        <div className="flex">
+          {/* Sidebar */}
+          <aside className="w-64 min-h-screen bg-dark-800/50 border-r border-white/10 fixed top-20 left-0">
+            <div className="p-6">
+              <div className="flex items-center gap-2 mb-8">
+                <Shield className="w-6 h-6 text-primary-400" />
+                <h2 className="text-xl font-bold">Admin Panel</h2>
+              </div>
+
+              <nav className="space-y-2">
+                <button
+                  onClick={() => setActiveSection('dashboard')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeSection === 'dashboard'
+                      ? 'bg-primary-500/20 text-primary-400'
+                      : 'hover:bg-white/5 text-gray-300'
+                  }`}
+                >
+                  <LayoutDashboard className="w-5 h-5" />
+                  <span>Dashboard</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveSection('users')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeSection === 'users'
+                      ? 'bg-primary-500/20 text-primary-400'
+                      : 'hover:bg-white/5 text-gray-300'
+                  }`}
+                >
+                  <Users className="w-5 h-5" />
+                  <span>Uživatelé</span>
+                  {stats?.stats?.totalUsers && (
+                    <span className="ml-auto text-sm text-gray-400">{stats.stats.totalUsers}</span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setActiveSection('businesses')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeSection === 'businesses'
+                      ? 'bg-primary-500/20 text-primary-400'
+                      : 'hover:bg-white/5 text-gray-300'
+                  }`}
+                >
+                  <Building2 className="w-5 h-5" />
+                  <span>Podniky</span>
+                  {stats?.stats?.pendingBusinesses > 0 && (
+                    <span className="ml-auto bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">
+                      {stats.stats.pendingBusinesses}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setActiveSection('profiles')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeSection === 'profiles'
+                      ? 'bg-primary-500/20 text-primary-400'
+                      : 'hover:bg-white/5 text-gray-300'
+                  }`}
+                >
+                  <UserCircle className="w-5 h-5" />
+                  <span>Profily</span>
+                  {stats?.stats?.pendingProfiles > 0 && (
+                    <span className="ml-auto bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">
+                      {stats.stats.pendingProfiles}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setActiveSection('pending-changes')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeSection === 'pending-changes'
+                      ? 'bg-primary-500/20 text-primary-400'
+                      : 'hover:bg-white/5 text-gray-300'
+                  }`}
+                >
+                  <AlertCircle className="w-5 h-5" />
+                  <span>Změny</span>
+                  {pendingChanges.filter(c => c.status === 'PENDING').length > 0 && (
+                    <span className="ml-auto bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">
+                      {pendingChanges.filter(c => c.status === 'PENDING').length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setActiveSection('reviews')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeSection === 'reviews'
+                      ? 'bg-primary-500/20 text-primary-400'
+                      : 'hover:bg-white/5 text-gray-300'
+                  }`}
+                >
+                  <MessageSquare className="w-5 h-5" />
+                  <span>Recenze</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveSection('payments')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeSection === 'payments'
+                      ? 'bg-primary-500/20 text-primary-400'
+                      : 'hover:bg-white/5 text-gray-300'
+                  }`}
+                >
+                  <CreditCard className="w-5 h-5" />
+                  <span>Platby</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveSection('banners')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeSection === 'banners'
+                      ? 'bg-primary-500/20 text-primary-400'
+                      : 'hover:bg-white/5 text-gray-300'
+                  }`}
+                >
+                  <ImageIcon className="w-5 h-5" />
+                  <span>Bannery</span>
+                </button>
+              </nav>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <div className="ml-64 flex-1 p-8">
+            {/* Dashboard Overview */}
+            {activeSection === 'dashboard' && stats && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+                  <p className="text-gray-400">Přehled celého webu a statistiky</p>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="glass rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-medium text-gray-400">Celkem uživatelů</h3>
+                      <Users className="w-5 h-5 text-primary-400" />
+                    </div>
+                    <p className="text-3xl font-bold">{stats.stats.totalUsers}</p>
+                  </div>
+
+                  <div className="glass rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-medium text-gray-400">Celkem podniků</h3>
+                      <Building2 className="w-5 h-5 text-primary-400" />
+                    </div>
+                    <p className="text-3xl font-bold">{stats.stats.totalBusinesses}</p>
+                    {stats.stats.pendingBusinesses > 0 && (
+                      <p className="text-sm text-orange-400 mt-2">
+                        {stats.stats.pendingBusinesses} čeká na schválení
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="glass rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-medium text-gray-400">Celkem profilů</h3>
+                      <UserCircle className="w-5 h-5 text-primary-400" />
+                    </div>
+                    <p className="text-3xl font-bold">{stats.stats.totalProfiles}</p>
+                    {stats.stats.pendingProfiles > 0 && (
+                      <p className="text-sm text-orange-400 mt-2">
+                        {stats.stats.pendingProfiles} čeká na schválení
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="glass rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-medium text-gray-400">Aktivita</h3>
+                      <TrendingUp className="w-5 h-5 text-green-400" />
+                    </div>
+                    <p className="text-3xl font-bold">+12%</p>
+                    <p className="text-sm text-gray-400 mt-2">Tento týden</p>
+                  </div>
+                </div>
+
+                {/* Traffic Charts */}
+                <div className="glass rounded-xl p-6">
+                  <h3 className="text-xl font-bold mb-6">Návštěvnost webu (posledních 30 dní)</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart
+                      data={[
+                        { date: '1.11', views: 245, users: 180 },
+                        { date: '2.11', views: 312, users: 225 },
+                        { date: '3.11', views: 289, users: 198 },
+                        { date: '4.11', views: 378, users: 267 },
+                        { date: '5.11', views: 456, users: 321 },
+                        { date: '6.11', views: 423, users: 298 },
+                        { date: '7.11', views: 512, users: 356 },
+                        { date: '8.11', views: 478, users: 334 },
+                        { date: '9.11', views: 567, users: 389 },
+                        { date: '10.11', views: 634, users: 421 },
+                        { date: '11.11', views: 589, users: 398 },
+                        { date: '12.11', views: 678, users: 456 },
+                        { date: '13.11', views: 723, users: 487 },
+                        { date: '14.11', views: 812, users: 534 },
+                      ]}
+                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#ec4899" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#ec4899" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                      <XAxis dataKey="date" stroke="#9ca3af" />
+                      <YAxis stroke="#9ca3af" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1f2937',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '8px',
+                          color: '#fff'
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="views"
+                        stroke="#ec4899"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorViews)"
+                        name="Zobrazení"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="users"
+                        stroke="#8b5cf6"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorUsers)"
+                        name="Uživatelé"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* SEO Keywords (KW) */}
+                <div className="glass rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold">Top vyhledávací dotazy (SEO Keywords)</h3>
+                    <Search className="w-5 h-5 text-primary-400" />
+                  </div>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 bg-white/5 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">escort praha</span>
+                          <span className="text-xs text-green-400">+24%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full bg-primary-500" style={{ width: '85%' }}></div>
+                          </div>
+                          <span className="text-xs text-gray-400">1,234</span>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-white/5 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">erotické masáže</span>
+                          <span className="text-xs text-green-400">+18%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full bg-primary-500" style={{ width: '72%' }}></div>
+                          </div>
+                          <span className="text-xs text-gray-400">987</span>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-white/5 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">holky na sex</span>
+                          <span className="text-xs text-green-400">+32%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full bg-primary-500" style={{ width: '68%' }}></div>
+                          </div>
+                          <span className="text-xs text-gray-400">856</span>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-white/5 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">privát brno</span>
+                          <span className="text-xs text-green-400">+15%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full bg-primary-500" style={{ width: '54%' }}></div>
+                          </div>
+                          <span className="text-xs text-gray-400">634</span>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-white/5 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">domina ostrava</span>
+                          <span className="text-xs text-orange-400">-3%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full bg-primary-500" style={{ width: '42%' }}></div>
+                          </div>
+                          <span className="text-xs text-gray-400">512</span>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-white/5 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">erotický salon</span>
+                          <span className="text-xs text-green-400">+9%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full bg-primary-500" style={{ width: '38%' }}></div>
+                          </div>
+                          <span className="text-xs text-gray-400">478</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recent Activity */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Recent Users */}
+                  <div className="glass rounded-xl p-6">
+                    <h3 className="text-lg font-bold mb-4">Nejnovější uživatelé</h3>
+                    <div className="space-y-3">
+                      {stats.recentUsers?.slice(0, 5).map((user: any) => (
+                        <div key={user.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                          <div>
+                            <p className="font-medium">{user.email}</p>
+                            <p className="text-sm text-gray-400">
+                              {user._count.businesses} podniků, {user._count.profiles} profilů
+                            </p>
+                          </div>
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            user.role === 'ADMIN' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'
+                          }`}>
+                            {user.role}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Recent Businesses */}
+                  <div className="glass rounded-xl p-6">
+                    <h3 className="text-lg font-bold mb-4">Nejnovější podniky</h3>
+                    <div className="space-y-3">
+                      {stats.recentBusinesses?.slice(0, 5).map((business: any) => (
+                        <div key={business.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                          <div>
+                            <p className="font-medium">{business.name}</p>
+                            <p className="text-sm text-gray-400">{business.city} • {business.owner.email}</p>
+                          </div>
+                          {business.verified ? (
+                            <CheckCircle className="w-5 h-5 text-green-400" />
+                          ) : (
+                            <AlertCircle className="w-5 h-5 text-orange-400" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Users Section */}
+            {activeSection === 'users' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold mb-2">Uživatelé</h1>
+                    <p className="text-gray-400">Správa všech uživatelů platformy</p>
+                  </div>
+
+                  {/* Vyhledávání podle názvu podniku / telefonního čísla */}
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        value={userSearchQuery}
+                        onChange={(e) => setUserSearchQuery(e.target.value)}
+                        placeholder="Hledat podle názvu podniku nebo telefonu..."
+                        className="pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-primary-400 transition-colors text-sm w-80"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {users
+                    .filter(user => {
+                      if (!userSearchQuery) return true;
+
+                      const query = userSearchQuery.toLowerCase();
+                      const userBusinesses = businesses.filter(b => b.ownerId === user.id);
+                      const userProfiles = profiles.filter(p => p.ownerId === user.id);
+
+                      // Vyhledávání v emailu
+                      if (user.email.toLowerCase().includes(query)) return true;
+
+                      // Vyhledávání v názvech podniků
+                      if (userBusinesses.some(b => b.name.toLowerCase().includes(query))) return true;
+
+                      // Vyhledávání v telefonních číslech
+                      const phones = [
+                        ...userBusinesses.map(b => b.phone),
+                        ...userProfiles.map(p => p.phone)
+                      ].filter(Boolean);
+
+                      if (phones.some(phone => phone.includes(query))) return true;
+
+                      return false;
+                    })
+                    .map((user) => {
+                      const isExpanded = expandedUserId === user.id;
+                      const userBusinesses = businesses.filter(b => b.ownerId === user.id);
+                      const userProfiles = profiles.filter(p => p.ownerId === user.id);
+
+                      // Najít telefonní čísla z podniků a profilů
+                      const phones = [
+                        ...userBusinesses.map(b => b.phone),
+                        ...userProfiles.map(p => p.phone)
+                      ].filter(Boolean);
+                      const uniquePhones = [...new Set(phones)];
+
+                      return (
+                        <div key={user.id} className="glass rounded-xl overflow-hidden">
+                          {/* Hlavní řádek - rozklikávací */}
+                          <div
+                            onClick={() => setExpandedUserId(isExpanded ? null : user.id)}
+                            className="p-4 cursor-pointer hover:bg-white/5 transition-colors"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4 flex-1">
+                                <div className="flex items-center gap-2">
+                                  {isExpanded ? (
+                                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                  )}
+                                </div>
+
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3">
+                                    <span className="font-medium">{user.email}</span>
+                                    <span className={`text-xs px-2 py-1 rounded ${
+                                      user.role === 'ADMIN' ? 'bg-red-500/20 text-red-400' :
+                                      user.role === 'PROVIDER' ? 'bg-blue-500/20 text-blue-400' :
+                                      'bg-gray-500/20 text-gray-400'
+                                    }`}>
+                                      {user.role}
+                                    </span>
+                                  </div>
+                                  {uniquePhones.length > 0 && (
+                                    <div className="text-sm text-gray-400 mt-1">
+                                      📞 {uniquePhones.join(', ')}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-6 text-sm">
+                                <div className="text-center">
+                                  <div className="text-gray-400">Podniky</div>
+                                  <div className="font-bold">{user._count.businesses}</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-gray-400">Profily</div>
+                                  <div className="font-bold">{user._count.profiles}</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-gray-400">Recenze</div>
+                                  <div className="font-bold">{user._count.reviews}</div>
+                                </div>
+                                <div className="text-gray-400 text-xs">
+                                  {new Date(user.createdAt).toLocaleDateString('cs-CZ')}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Rozbalený detail */}
+                          {isExpanded && (
+                            <div className="px-4 pb-4 border-t border-white/5">
+                              {/* Podniky */}
+                              {userBusinesses.length > 0 && (
+                                <div className="mt-4">
+                                  <h4 className="text-sm font-semibold text-primary-400 mb-2">
+                                    Podniky ({userBusinesses.length})
+                                  </h4>
+                                  <div className="space-y-2">
+                                    {userBusinesses.map((business) => (
+                                      <div key={business.id} className="p-3 bg-white/5 rounded-lg">
+                                        <div className="flex items-start justify-between">
+                                          <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                              <span className="font-medium">{business.name}</span>
+                                              {business.verified && (
+                                                <CheckCircle className="w-4 h-4 text-green-400" />
+                                              )}
+                                              {!business.approved && (
+                                                <span className="text-xs px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded">
+                                                  Čeká
+                                                </span>
+                                              )}
+                                            </div>
+                                            <div className="text-xs text-gray-400 space-y-0.5">
+                                              <div>📞 {business.phone}</div>
+                                              <div>📍 {business.city}</div>
+                                              <div>👥 {business._count.profiles} profilů</div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* SOLO Profily */}
+                              {userProfiles.length > 0 && (
+                                <div className="mt-4">
+                                  <h4 className="text-sm font-semibold text-blue-400 mb-2">
+                                    SOLO Profily ({userProfiles.length})
+                                  </h4>
+                                  <div className="space-y-2">
+                                    {userProfiles.map((profile) => (
+                                      <div key={profile.id} className="p-3 bg-white/5 rounded-lg">
+                                        <div className="flex items-start justify-between">
+                                          <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                              <span className="font-medium">{profile.name}</span>
+                                              {profile.verified && (
+                                                <CheckCircle className="w-4 h-4 text-green-400" />
+                                              )}
+                                              {!profile.approved && (
+                                                <span className="text-xs px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded">
+                                                  Čeká
+                                                </span>
+                                              )}
+                                            </div>
+                                            <div className="text-xs text-gray-400 space-y-0.5">
+                                              <div>📞 {profile.phone}</div>
+                                              <div>📍 {profile.city}</div>
+                                              <div>👤 {profile.age} let</div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {userBusinesses.length === 0 && userProfiles.length === 0 && (
+                                <div className="mt-4 text-center text-gray-400 text-sm py-4">
+                                  Žádné podniky ani profily
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+
+            {/* Businesses Section */}
+            {activeSection === 'businesses' && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">Podniky</h1>
+                  <p className="text-gray-400">Správa a schvalování podniků</p>
+                </div>
+
+                <div className="space-y-4">
+                  {businesses.map((business) => (
+                    <div key={business.id} className="glass rounded-xl p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-xl font-bold">{business.name}</h3>
+                            <div className="flex items-center gap-2">
+                              {business.approved && (
+                                <span className="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-400">Schváleno</span>
+                              )}
+                              {business.verified && (
+                                <CheckCircle className="w-5 h-5 text-green-400" title="Ověřeno" />
+                              )}
+                              {!business.approved && (
+                                <AlertCircle className="w-5 h-5 text-orange-400" title="Čeká na schválení" />
+                              )}
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <p className="text-gray-400">Vlastník</p>
+                              <p>{business.owner.email}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-400">Město</p>
+                              <p>{business.city}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-400">Telefon</p>
+                              <p>{business.phone}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-400">Typ</p>
+                              <p>{business.profileType}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-400">Profily</p>
+                              <p>{business._count.profiles}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-400">Hodnocení</p>
+                              <p>{business.rating.toFixed(1)} ({business._count.reviews})</p>
+                            </div>
+                          </div>
+                          {business.description && (
+                            <p className="text-sm text-gray-400 mt-3">{business.description}</p>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          {/* Edit Button */}
+                          <button
+                            onClick={() => {/* TODO: handleEditBusiness(business) */}}
+                            className="flex items-center gap-2 px-4 py-2 bg-primary-500/20 text-primary-400 rounded-lg hover:bg-primary-500/30 transition-colors"
+                          >
+                            <Eye className="w-4 h-4" />
+                            Upravit
+                          </button>
+
+                          {/* Approve/Reject Button */}
+                          {!business.approved ? (
+                            <button
+                              onClick={() => handleApprove('business', business.id, true)}
+                              className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              Schválit
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleApprove('business', business.id, false)}
+                              className="flex items-center gap-2 px-4 py-2 bg-orange-500/20 text-orange-400 rounded-lg hover:bg-orange-500/30 transition-colors"
+                            >
+                              <XCircle className="w-4 h-4" />
+                              Zamítnout
+                            </button>
+                          )}
+
+                          {/* Verify/Unverify Button */}
+                          {!business.verified ? (
+                            <button
+                              onClick={() => handleVerify('business', business.id, true)}
+                              className="flex items-center gap-2 px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              Ověřit
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleVerify('business', business.id, false)}
+                              className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
+                            >
+                              <XCircle className="w-4 h-4" />
+                              Zrušit ověření
+                            </button>
+                          )}
+
+                          {/* Delete Button */}
+                          <button
+                            onClick={() => handleDeleteBusiness(business.id)}
+                            className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
+                          >
+                            <XCircle className="w-4 h-4" />
+                            Smazat
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Profiles Section */}
+            {activeSection === 'profiles' && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">Profily</h1>
+                  <p className="text-gray-400">Správa a schvalování profilů</p>
+                </div>
+
+                {profiles.length > 0 ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {profiles.map((profile: any) => (
+                      <div key={profile.id} className="glass rounded-xl p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <h3 className="text-xl font-bold mb-1">{profile.name}</h3>
+                            <div className="space-y-1 text-sm text-gray-400">
+                              <p><strong>Věk:</strong> {profile.age} let</p>
+                              <p><strong>Město:</strong> {profile.city}</p>
+                              <p><strong>Telefon:</strong> {profile.phone}</p>
+                              <p><strong>Vlastník:</strong> {profile.owner.email}</p>
+                              {profile.business && (
+                                <p className="text-primary-400">
+                                  <strong>Podnik:</strong> {profile.business.name}
+                                </p>
+                              )}
+                              {!profile.business && (
+                                <p className="text-blue-400">
+                                  <strong>Typ:</strong> SOLO profil
+                                </p>
+                              )}
+                            </div>
+                            {profile.description && (
+                              <p className="text-sm text-gray-300 mt-2 line-clamp-2">
+                                {profile.description}
+                              </p>
+                            )}
+                          </div>
+                          {profile.photos?.[0] && (
+                            <img
+                              src={profile.photos[0].url}
+                              alt={profile.name}
+                              className="w-20 h-20 object-cover rounded-lg ml-4"
+                            />
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-4 border-t border-white/10">
+                          <div className="flex items-center gap-1">
+                            {profile.approved ? (
+                              <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded">
+                                ✓ Schváleno
+                              </span>
+                            ) : (
+                              <span className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 rounded">
+                                Čeká na schválení
+                              </span>
+                            )}
+                            {profile.verified && (
+                              <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded ml-1">
+                                ✓ Ověřeno
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="ml-auto flex gap-2">
+                            {/* Approve/Reject Button */}
+                            {!profile.approved ? (
+                              <button
+                                onClick={() => handleApprove('profile', profile.id, true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors text-sm"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                                Schválit
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleApprove('profile', profile.id, false)}
+                                className="flex items-center gap-2 px-4 py-2 bg-orange-500/20 text-orange-400 rounded-lg hover:bg-orange-500/30 transition-colors text-sm"
+                              >
+                                <XCircle className="w-4 h-4" />
+                                Zamítnout
+                              </button>
+                            )}
+
+                            {/* Verify/Unverify Button */}
+                            {!profile.verified ? (
+                              <button
+                                onClick={() => handleVerify('profile', profile.id, true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-sm"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                                Ověřit
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleVerify('profile', profile.id, false)}
+                                className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors text-sm"
+                              >
+                                <XCircle className="w-4 h-4" />
+                                Zrušit ověření
+                              </button>
+                            )}
+
+                            {/* Delete Button */}
+                            <button
+                              onClick={() => handleDeleteProfile(profile.id)}
+                              className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors text-sm"
+                            >
+                              <XCircle className="w-4 h-4" />
+                              Smazat
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="glass rounded-xl p-12 text-center">
+                    <UserCircle className="w-16 h-16 mx-auto mb-4 text-gray-600" />
+                    <p className="text-gray-400">Zatím žádné profily</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Pending Changes Section */}
+            {activeSection === 'pending-changes' && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">Čekající změny</h1>
+                  <p className="text-gray-400">Kontrola a schvalování změn profilů a podniků</p>
+                </div>
+
+                {pendingChanges.length > 0 ? (
+                  <div className="space-y-4">
+                    {pendingChanges.map((change: any) => {
+                      const isPending = change.status === 'PENDING';
+                      const oldData = change.oldData || {};
+                      const newData = change.newData || {};
+
+                      // Calculate monthly changes count for this user
+                      const thisMonth = new Date();
+                      thisMonth.setDate(1);
+                      thisMonth.setHours(0, 0, 0, 0);
+                      const userMonthlyCount = pendingChanges.filter((c: any) =>
+                        c.requestedBy.id === change.requestedBy.id &&
+                        new Date(c.createdAt) >= thisMonth
+                      ).length;
+
+                      // Determine type display
+                      const typeDisplay = change.profileId ? 'Dívka' : 'Podnik';
+
+                      // Get business info - prefer profile's business, fallback to user's business
+                      let businessName = '';
+                      let businessPhone = '';
+
+                      if (change.profileId && change.profile) {
+                        // For profile changes, show profile's phone and business name if available
+                        businessPhone = change.profile.phone || '';
+                        businessName = change.profile.business?.name || '';
+
+                        // If no business linked to profile, use user's first business
+                        if (!businessName && change.requestedBy.businesses?.[0]) {
+                          businessName = change.requestedBy.businesses[0].name;
+                        }
+                      } else if (change.businessId && change.business) {
+                        // For business changes, show the business info
+                        businessName = change.business.name;
+                        businessPhone = change.business.phone;
+                      }
+
+                      // Fallback to user's business if nothing else
+                      if (!businessName && change.requestedBy.businesses?.[0]) {
+                        businessName = change.requestedBy.businesses[0].name;
+                        businessPhone = change.requestedBy.businesses[0].phone;
+                      }
+
+                      const userDisplay = businessName && businessPhone
+                        ? `${businessName} - ${businessPhone}`
+                        : businessName || businessPhone || change.requestedBy.email;
+
+                      return (
+                        <div key={change.id} className="glass rounded-xl p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h3 className="text-xl font-bold">
+                                  {change.type === 'PROFILE_UPDATE' ? 'Změna profilu' : 'Změna podniku'}
+                                </h3>
+                                <span className={`text-xs px-3 py-1 rounded-full ${
+                                  change.status === 'PENDING' ? 'bg-orange-500/20 text-orange-400' :
+                                  change.status === 'APPROVED' ? 'bg-green-500/20 text-green-400' :
+                                  'bg-red-500/20 text-red-400'
+                                }`}>
+                                  {change.status === 'PENDING' ? 'Čeká' : change.status === 'APPROVED' ? 'Schváleno' : 'Zamítnuto'}
+                                </span>
+                              </div>
+
+                              <div className="space-y-2 text-sm text-gray-400">
+                                <p><strong>Typ:</strong> {typeDisplay}</p>
+                                <p><strong>Požadováno uživatelem:</strong> {userDisplay}</p>
+                                <p><strong>Žádostí tento měsíc:</strong> {userMonthlyCount}</p>
+                                <p><strong>Datum:</strong> {new Date(change.createdAt).toLocaleString('cs-CZ')}</p>
+                                {change.reviewedBy && (
+                                  <>
+                                    <p><strong>Zkontroloval:</strong> {change.reviewedBy.email}</p>
+                                    <p><strong>Datum kontroly:</strong> {new Date(change.reviewedAt).toLocaleString('cs-CZ')}</p>
+                                    {change.reviewNotes && (
+                                      <p><strong>Poznámky:</strong> {change.reviewNotes}</p>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+
+                              {/* Show changes */}
+                              <div className="mt-4 p-4 bg-white/5 rounded-lg">
+                                <h4 className="font-semibold mb-2">Změny:</h4>
+                                <div className="space-y-2 text-sm">
+                                  {Object.keys(newData).map((key) => {
+                                    if (key === 'updatedAt') return null;
+                                    if (key === 'photoChanges') return null; // Handle separately
+
+                                    return (
+                                      <div key={key} className="flex items-start gap-2">
+                                        <span className="text-gray-400 min-w-[120px]">{key}:</span>
+                                        <div className="flex-1">
+                                          {oldData[key] !== undefined && (
+                                            <div className="text-red-400 line-through">
+                                              {typeof oldData[key] === 'object' ? JSON.stringify(oldData[key]) : String(oldData[key])}
+                                            </div>
+                                          )}
+                                          <div className="text-green-400">
+                                            {typeof newData[key] === 'object' ? JSON.stringify(newData[key]) : String(newData[key])}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+
+                                  {/* Photo Changes */}
+                                  {newData.photoChanges && (
+                                    <div className="mt-4 pt-4 border-t border-white/5">
+                                      <h5 className="font-semibold mb-3 text-primary-400">Změny fotek:</h5>
+
+                                      {/* Photos to delete */}
+                                      {newData.photoChanges.photosToDelete && newData.photoChanges.photosToDelete.length > 0 && (
+                                        <div className="mb-3">
+                                          <p className="text-red-400 mb-2">Fotky ke smazání ({newData.photoChanges.photosToDelete.length}):</p>
+                                          <div className="grid grid-cols-4 gap-2">
+                                            {oldData.photos?.filter((p: any) => newData.photoChanges.photosToDelete.includes(p.id)).map((photo: any) => (
+                                              <div key={photo.id} className="relative aspect-square rounded border-2 border-red-500">
+                                                <img src={photo.url} alt="Smazat" className="w-full h-full object-cover rounded" />
+                                                <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center">
+                                                  <span className="text-red-400 font-bold">SMAZAT</span>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* New photos */}
+                                      {newData.photoChanges.newPhotos && newData.photoChanges.newPhotos.length > 0 && (
+                                        <div>
+                                          <p className="text-green-400 mb-2">Nové fotky ({newData.photoChanges.newPhotos.length}):</p>
+                                          <div className="grid grid-cols-4 gap-2">
+                                            {newData.photoChanges.newPhotos.map((photo: string, index: number) => (
+                                              <div key={index} className="relative aspect-square rounded border-2 border-green-500">
+                                                <img src={photo} alt={`Nová ${index + 1}`} className="w-full h-full object-cover rounded" />
+                                                <div className="absolute top-1 left-1 px-2 py-0.5 bg-green-500 rounded text-[10px] font-bold">
+                                                  NOVÁ
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Action buttons - pouze pro PENDING */}
+                            {isPending && (
+                              <div className="ml-4 flex flex-col gap-2">
+                                <button
+                                  onClick={() => handleReviewChange(change.id, 'approve')}
+                                  className="flex items-center gap-2 px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                  Schválit
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const notes = prompt('Poznámka k zamítnutí (volitelné):');
+                                    handleReviewChange(change.id, 'reject', notes || undefined);
+                                  }}
+                                  className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                  Zamítnout
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="glass rounded-xl p-12 text-center">
+                    <AlertCircle className="w-16 h-16 mx-auto mb-4 text-gray-600" />
+                    <p className="text-gray-400">Žádné čekající změny</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Reviews, Payments, Banners - Placeholders */}
+            {['reviews', 'payments', 'banners'].includes(activeSection) && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-3xl font-bold mb-2 capitalize">{activeSection}</h1>
+                  <p className="text-gray-400">Tato sekce bude brzy dostupná</p>
+                </div>
+                <div className="glass rounded-xl p-12 text-center">
+                  <AlertCircle className="w-16 h-16 mx-auto mb-4 text-gray-600" />
+                  <p className="text-gray-400">Funkce v přípravě</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}

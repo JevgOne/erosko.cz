@@ -50,6 +50,7 @@ export default function BusinessGrid({ profiles, title, description }: BusinessG
     if (!acc[businessName]) {
       acc[businessName] = {
         name: businessName,
+        slug: (profile as any).slug, // Add slug from profile
         location: profile.location,
         phone: profile.phone,
         rating: profile.rating,
@@ -131,7 +132,7 @@ export default function BusinessGrid({ profiles, title, description }: BusinessG
               {currentBusinesses.map((business, index) => (
               <Link
                 key={index}
-                href={`/podnik/${business.name.toLowerCase().replace(/\s+/g, '-')}`}
+                href={`/podnik/${business.slug || business.name.toLowerCase().replace(/\s+/g, '-')}`}
                 className="glass rounded-3xl overflow-hidden card-hover group"
               >
                 {/* Image Container - vyšší než u běžných profilů */}

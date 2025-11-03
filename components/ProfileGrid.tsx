@@ -109,7 +109,7 @@ export default function ProfileGrid({ profiles, title, description }: ProfileGri
               {currentProfiles.map((profile) => (
               <Link
                 key={profile.id}
-                href={`/profil/${profile.id}`}
+                href={`/divky/${profile.slug || profile.id}`}
                 className="glass rounded-2xl overflow-hidden card-hover group"
               >
                 {/* Image Container */}
