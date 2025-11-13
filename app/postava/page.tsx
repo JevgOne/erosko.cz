@@ -70,7 +70,7 @@ export default function PostavaPage() {
 
             <p className="text-gray-300 mb-4">
               Vyberte si escort holky podle typu postavy. Nabízíme široký výběr od hubených přes
-              štíhlé až po plnoštíhlé krásky typu "krev a mléko".
+              štíhlé až po plnoštíhlé krásky typu &quot;krev a mléko&quot;.
             </p>
 
             <h3 className="text-2xl font-semibold mt-8 mb-4">Hubené holky</h3>
@@ -90,7 +90,7 @@ export default function PostavaPage() {
 
             <h3 className="text-2xl font-semibold mt-8 mb-4">Krev a mléko</h3>
             <p className="text-gray-300 mb-4">
-              Pro milovníky plnějších postav nabízíme holky typu "krev a mléko" - plnoštíhlé krásky
+              Pro milovníky plnějších postav nabízíme holky typu &quot;krev a mléko&quot; - plnoštíhlé krásky
               s dokonalými křivkami a smyslnou postavou.
             </p>
           </div>
